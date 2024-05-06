@@ -1,9 +1,9 @@
 package connections
 
 import (
-	"github.com/GabiHert/pesquisai-api/internal/config/injector"
-	"github.com/GabiHert/pesquisai-api/internal/config/properties"
-	"github.com/GabiHert/pesquisai-database-lib/connection"
+	"github.com/PesquisAi/pesquisai-api/internal/config/injector"
+	"github.com/PesquisAi/pesquisai-api/internal/config/properties"
+	"github.com/PesquisAi/pesquisai-database-lib/connection"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )

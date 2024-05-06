@@ -1,6 +1,9 @@
-github.com/GabiHert/pesquisai-database-lib v0.1.13/go.mod h1:EJqxeb69lJfUbS+wb4SF7RmSGq+7F0GxMFNMGunhaRw=
-github.com/GabiHert/pesquisai-errors-lib v0.0.7/go.mod h1:JhqxEKo1RFXSDXCJzUDNlq9P/VwedwQW1a7Jr3HJpfg=
-github.com/GabiHert/pesquisai-rabbitmq-lib v0.0.6/go.mod h1:yX4zvtGp46nBq/UMG8Q7jd1izLZM2Ien6irQWD7W5V0=
+github.com/PesquisAi/pesquisai-database-lib v0.1.13/go.mod h1:EJqxeb69lJfUbS+wb4SF7RmSGq+7F0GxMFNMGunhaRw=
+github.com/PesquisAi/pesquisai-database-lib v0.1.16/go.mod h1:AILMzQuf+0HKl9sh2/tLupusW102/zQAJnuDsxd+j0o=
+github.com/PesquisAi/pesquisai-errors-lib v0.0.7/go.mod h1:JhqxEKo1RFXSDXCJzUDNlq9P/VwedwQW1a7Jr3HJpfg=
+github.com/PesquisAi/pesquisai-errors-lib v0.0.8/go.mod h1:p0dX2YnDPZ2ZiMQitb2TEIeBhpgXsoiCscHTY5RaHPA=
+github.com/PesquisAi/pesquisai-rabbitmq-lib v0.0.6/go.mod h1:yX4zvtGp46nBq/UMG8Q7jd1izLZM2Ien6irQWD7W5V0=
+github.com/PesquisAi/pesquisai-rabbitmq-lib v0.0.9/go.mod h1:aJ8Z7IQ8aGsayqAidzId0EDmTikA4kLTB2JyZRe/75A=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gabriel-vasile/mimetype v1.4.3/go.mod h1:d8uq/6HKRL6CGdk+aubisF/M5GcPfT7nKyLpA0lbSSk=

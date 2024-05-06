@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"context"
-	"github.com/GabiHert/pesquisai-api/internal/delivery/dtos"
-	"github.com/GabiHert/pesquisai-api/internal/delivery/parser"
-	"github.com/GabiHert/pesquisai-api/internal/delivery/validations"
-	"github.com/GabiHert/pesquisai-api/internal/domain/interfaces"
-	"github.com/GabiHert/pesquisai-api/internal/domain/models"
+	"github.com/PesquisAi/pesquisai-api/internal/delivery/dtos"
+	"github.com/PesquisAi/pesquisai-api/internal/delivery/parser"
+	"github.com/PesquisAi/pesquisai-api/internal/delivery/validations"
+	"github.com/PesquisAi/pesquisai-api/internal/domain/interfaces"
+	"github.com/PesquisAi/pesquisai-api/internal/domain/models"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log/slog"
 )

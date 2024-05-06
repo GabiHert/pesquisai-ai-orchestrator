@@ -2,28 +2,34 @@ package usecases
 
 import (
 	"context"
-	"github.com/GabiHert/pesquisai-api/internal/domain/factory"
-	"github.com/GabiHert/pesquisai-api/internal/domain/interfaces"
-	"github.com/GabiHert/pesquisai-api/internal/domain/models"
+	"github.com/PesquisAi/pesquisai-api/internal/domain/factory"
+	"github.com/PesquisAi/pesquisai-api/internal/domain/interfaces"
+	"github.com/PesquisAi/pesquisai-api/internal/domain/models"
 	"log/slog"
 )
 
 type UseCase struct {
 	requestRepository interfaces.RequestRepository
-	queueGemini       interfaces.Queue
+	serviceFactory    *factory.ServiceFactory
 }
 
 func (u UseCase) Orchestrate(ctx context.Context, request models.AiOrchestratorRequest) error {
 	slog.InfoContext(ctx, "useCase.Orchestrate",
 		slog.String("details", "process started"))
 
-	service, err := factory.FactorService(request)
+	service, err := u.serviceFactory.Factory(request)
 	if err != nil {
+		slog.ErrorContext(ctx, "useCase.Orchestrate",
+			slog.String("details", "process error"),
+			slog.String("error", err.Error()))
 		return err
 	}
 
-	err = service.Execute()
+	err = service.Execute(ctx, request)
 	if err != nil {
+		slog.ErrorContext(ctx, "useCase.Orchestrate",
+			slog.String("details", "process error"),
+			slog.String("error", err.Error()))
 		return err
 	}
 
@@ -32,8 +38,9 @@ func (u UseCase) Orchestrate(ctx context.Context, request models.AiOrchestratorR
 	return nil
 }
 
-func NewUseCase(requestRepository interfaces.RequestRepository, aiOrchestratorQueue interfaces.Queue) interfaces.UseCase {
+func NewUseCase(requestRepository interfaces.RequestRepository, serviceFactory *factory.ServiceFactory) interfaces.UseCase {
 	return &UseCase{
 		requestRepository: requestRepository,
+		serviceFactory:    serviceFactory,
 	}
 }

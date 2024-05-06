@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/GabiHert/pesquisai-api/internal/config/connections"
-	"github.com/GabiHert/pesquisai-api/internal/config/injector"
-	"github.com/GabiHert/pesquisai-api/internal/config/server"
+	"github.com/PesquisAi/pesquisai-api/internal/config/connections"
+	"github.com/PesquisAi/pesquisai-api/internal/config/injector"
+	"github.com/PesquisAi/pesquisai-api/internal/config/server"
 	"github.com/joho/godotenv"
 )
 

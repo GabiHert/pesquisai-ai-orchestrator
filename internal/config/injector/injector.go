@@ -1,12 +1,14 @@
 package injector
 
 import (
-	"github.com/GabiHert/pesquisai-api/internal/config/properties"
-	"github.com/GabiHert/pesquisai-api/internal/domain/interfaces"
-	"github.com/GabiHert/pesquisai-api/internal/domain/usecases"
-	"github.com/GabiHert/pesquisai-database-lib/connection"
-	"github.com/GabiHert/pesquisai-database-lib/repositories"
-	"github.com/GabiHert/pesquisai-rabbitmq-lib/rabbitmq"
+	"github.com/PesquisAi/pesquisai-api/internal/config/properties"
+	"github.com/PesquisAi/pesquisai-api/internal/domain/factory"
+	"github.com/PesquisAi/pesquisai-api/internal/domain/interfaces"
+	"github.com/PesquisAi/pesquisai-api/internal/domain/services"
+	"github.com/PesquisAi/pesquisai-api/internal/domain/usecases"
+	"github.com/PesquisAi/pesquisai-database-lib/connection"
+	"github.com/PesquisAi/pesquisai-database-lib/repositories"
+	"github.com/PesquisAi/pesquisai-rabbitmq-lib/rabbitmq"
 	"gorm.io/gorm"
 	"net/http"
 )
@@ -22,6 +24,7 @@ type Dependencies struct {
 	QueueStatusManager                  interfaces.Queue
 	ConsumerAiOrchestratorQueue         interfaces.QueueConsumer
 	ConsumerAiOrchestratorCallbackQueue interfaces.QueueConsumer
+	ServiceFactory                      *factory.ServiceFactory
 }
 
 func (d *Dependencies) Inject() *Dependencies {
@@ -55,8 +58,19 @@ func (d *Dependencies) Inject() *Dependencies {
 			properties.CreateQueueIfNX())
 	}
 
+	if d.ServiceFactory == nil {
+		d.ServiceFactory = &factory.ServiceFactory{
+			LocationService:         services.NewLocationService(d.QueueGemini),
+			LanguageService:         nil,
+			SentencesService:        nil,
+			WorthCheckingService:    nil,
+			WorthSummarizingService: nil,
+			SummarizeService:        nil,
+		}
+	}
+
 	if d.UseCase == nil {
-		d.UseCase = usecases.NewUseCase(d.RequestRepository, d.QueueGemini)
+		d.UseCase = usecases.NewUseCase(d.RequestRepository, d.ServiceFactory)
 	}
 
 	if d.ConsumerAiOrchestratorQueue == nil {

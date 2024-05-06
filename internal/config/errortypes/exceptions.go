@@ -1,7 +1,7 @@
 package errortypes
 
 import (
-	"github.com/GabiHert/pesquisai-errors-lib/exceptions"
+	"github.com/PesquisAi/pesquisai-errors-lib/exceptions"
 	"net/http"
 )
 
@@ -29,6 +29,16 @@ func NewNotFoundException(messages ...string) *exceptions.Error {
 		ErrorType: exceptions.ErrorType{
 			Code:           "PAPI03",
 			Type:           "Not found",
+			HttpStatusCode: http.StatusNotFound,
+		}}
+}
+
+func NewServiceNotFoundException(messages ...string) *exceptions.Error {
+	return &exceptions.Error{
+		Messages: messages,
+		ErrorType: exceptions.ErrorType{
+			Code:           "PAPI04",
+			Type:           "Service could not be found to execute",
 			HttpStatusCode: http.StatusNotFound,
 		}}
 }

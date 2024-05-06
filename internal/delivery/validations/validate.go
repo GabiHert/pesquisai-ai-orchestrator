@@ -2,8 +2,8 @@ package validations
 
 import (
 	"fmt"
-	"github.com/GabiHert/pesquisai-api/internal/config/errortypes"
-	"github.com/GabiHert/pesquisai-api/internal/delivery/dtos"
+	"github.com/PesquisAi/pesquisai-api/internal/config/errortypes"
+	"github.com/PesquisAi/pesquisai-api/internal/delivery/dtos"
 	"github.com/go-playground/validator/v10"
 )
 
