@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/PesquisAi/pesquisai-api/internal/config/connections"
-	"github.com/PesquisAi/pesquisai-api/internal/config/injector"
-	"github.com/PesquisAi/pesquisai-api/internal/config/server"
+	"context"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/connections"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/injector"
 	"github.com/joho/godotenv"
+	"log/slog"
+	"sync"
 )
 
 func main() {
@@ -19,7 +21,22 @@ func main() {
 		panic(err)
 	}
 
-	if err = server.Serve(deps.Mux, deps.Controller); err != nil {
-		panic(err)
-	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		if err := deps.ConsumerAiOrchestratorQueue.Consume(context.Background(), deps.Controller.AiOrchestratorHandler); err != nil {
+			slog.Error("Error during ai-orchestrator-callback routine: ", err)
+			wg.Done()
+		}
+	}()
+
+	go func() {
+		if err := deps.ConsumerAiOrchestratorCallbackQueue.Consume(context.TODO(), deps.Controller.AiOrchestratorCallbackHandler); err != nil {
+			slog.Error("Error during ai-orchestrator-callback routine: ", err)
+			wg.Done()
+		}
+	}()
+
+	wg.Wait()
 }

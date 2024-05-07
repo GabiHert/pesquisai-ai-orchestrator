@@ -2,11 +2,14 @@ package controllers
 
 import (
 	"context"
-	"github.com/PesquisAi/pesquisai-api/internal/delivery/dtos"
-	"github.com/PesquisAi/pesquisai-api/internal/delivery/parser"
-	"github.com/PesquisAi/pesquisai-api/internal/delivery/validations"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/interfaces"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/models"
+	"errors"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/errortypes"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/delivery/dtos"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/delivery/parser"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/delivery/validations"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/models"
+	"github.com/PesquisAi/pesquisai-errors-lib/exceptions"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log/slog"
 )
@@ -15,10 +18,25 @@ type controller struct {
 	useCase interfaces.UseCase
 }
 
-func (c controller) errorHandler(err error) {}
+func (c controller) errorHandler(err error) {
+	exception := &exceptions.Error{}
+	if !errors.As(err, &exception) {
+		exception = errortypes.NewUnknownException(err.Error())
+	}
+
+	b, _ := exception.ToJSON()
+	slog.Error("controller.errorHandler",
+		slog.String("details", "process error"),
+		slog.String("errorType", string(b)))
+}
+
+func (c controller) def() {
+
+}
 
 func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) {
-	slog.Info("useCase.Create",
+	defer c.def()
+	slog.Info("controller.AiOrchestratorHandler",
 		slog.String("details", "process started"),
 		slog.String("messageId", delivery.MessageId),
 		slog.String("userId", delivery.UserId))
@@ -49,8 +67,13 @@ func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) {
 		return
 	}
 
-	slog.Info("useCase.Create",
+	slog.Info("controller.AiOrchestratorHandler",
 		slog.String("details", "process finished"))
+	err = delivery.Ack(false)
+	if err != nil {
+		c.errorHandler(err)
+		return
+	}
 }
 
 func (c controller) AiOrchestratorCallbackHandler(delivery amqp.Delivery) {

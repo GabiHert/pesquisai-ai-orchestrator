@@ -2,10 +2,10 @@ package factory
 
 import (
 	"fmt"
-	"github.com/PesquisAi/pesquisai-api/internal/config/errortypes"
-	enumactions "github.com/PesquisAi/pesquisai-api/internal/domain/enums/actions"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/interfaces"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/models"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/errortypes"
+	enumactions "github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/enums/actions"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/models"
 )
 
 type ServiceFactory struct {

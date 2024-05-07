@@ -1,11 +1,12 @@
 package injector
 
 import (
-	"github.com/PesquisAi/pesquisai-api/internal/config/properties"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/factory"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/interfaces"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/services"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/usecases"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/properties"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/delivery/controllers"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/factory"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/services"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/usecases"
 	"github.com/PesquisAi/pesquisai-database-lib/connection"
 	"github.com/PesquisAi/pesquisai-database-lib/repositories"
 	"github.com/PesquisAi/pesquisai-rabbitmq-lib/rabbitmq"
@@ -23,6 +24,7 @@ type Dependencies struct {
 	QueueGemini                         interfaces.Queue
 	QueueStatusManager                  interfaces.Queue
 	ConsumerAiOrchestratorQueue         interfaces.QueueConsumer
+	QueueAiOrchestrator                 interfaces.Queue
 	ConsumerAiOrchestratorCallbackQueue interfaces.QueueConsumer
 	ServiceFactory                      *factory.ServiceFactory
 }
@@ -73,12 +75,14 @@ func (d *Dependencies) Inject() *Dependencies {
 		d.UseCase = usecases.NewUseCase(d.RequestRepository, d.ServiceFactory)
 	}
 
-	if d.ConsumerAiOrchestratorQueue == nil {
-		d.ConsumerAiOrchestratorQueue = rabbitmq.NewQueue(
+	if d.ConsumerAiOrchestratorQueue == nil || d.QueueAiOrchestrator == nil {
+		queue := rabbitmq.NewQueue(
 			d.QueueConnection,
 			properties.QueueNameAiOrchestrator,
 			rabbitmq.CONTENT_TYPE_JSON,
 			properties.CreateQueueIfNX())
+		d.ConsumerAiOrchestratorQueue = queue
+		d.QueueAiOrchestrator = queue
 	}
 
 	if d.ConsumerAiOrchestratorCallbackQueue == nil {
@@ -90,7 +94,7 @@ func (d *Dependencies) Inject() *Dependencies {
 	}
 
 	if d.Controller == nil {
-		//	d.Controller = controllers.NewController(d.UseCase)
+		d.Controller = controllers.NewController(d.UseCase)
 	}
 	return d
 }

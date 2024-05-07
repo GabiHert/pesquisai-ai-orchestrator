@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"github.com/PesquisAi/pesquisai-api/internal/config/connections"
-	"github.com/PesquisAi/pesquisai-api/internal/config/injector"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/connections"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/injector"
 	"log/slog"
 	"sync"
 )

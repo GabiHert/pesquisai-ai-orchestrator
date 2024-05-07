@@ -3,7 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/PesquisAi/pesquisai-api/internal/config/errortypes"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/errortypes"
 	"github.com/PesquisAi/pesquisai-rabbitmq-lib/rabbitmq"
 	"github.com/rabbitmq/amqp091-go"
 )

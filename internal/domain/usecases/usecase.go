@@ -2,9 +2,9 @@ package usecases
 
 import (
 	"context"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/factory"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/interfaces"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/models"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/factory"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/models"
 	"log/slog"
 )
 

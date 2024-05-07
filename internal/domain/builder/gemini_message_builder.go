@@ -11,13 +11,12 @@ type message struct {
 	Forward     *map[string]any `json:"forward"`
 }
 
-func BuildQueueGeminiMessage(forward map[string]any, requestId, question, outputQueue string) ([]byte, error) {
+func BuildQueueGeminiMessage(requestId, question, outputQueue string) ([]byte, error) {
 
 	msg := &message{
 		RequestId:   &requestId,
 		Question:    &question,
 		OutputQueue: &outputQueue,
-		Forward:     &forward,
 	}
 
 	return json.Marshal(msg)

@@ -3,10 +3,10 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/PesquisAi/pesquisai-api/internal/config/properties"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/builder"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/interfaces"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/models"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/properties"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/builder"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/models"
 	"log/slog"
 )
 
@@ -15,19 +15,13 @@ const (
 )
 
 type locationService struct {
-	queueGemini interfaces.Queue
+	queueGemini       interfaces.Queue
+	requestRepository interfaces.RequestRepository
 }
 
 func (l locationService) Execute(ctx context.Context, request models.AiOrchestratorRequest) error {
 	slog.InfoContext(ctx, "locationService.Execute",
 		slog.String("details", "process started"))
-
-	forward := map[string]any{
-		"request_id": *request.RequestId,
-		"context":    *request.Context,
-		"action":     *request.Action,
-		"research":   *request.Research,
-	}
 
 	question := fmt.Sprintf(
 		questionTemplate,
@@ -35,7 +29,6 @@ func (l locationService) Execute(ctx context.Context, request models.AiOrchestra
 		*request.Research)
 
 	b, err := builder.BuildQueueGeminiMessage(
-		forward,
 		*request.RequestId,
 		question,
 		properties.QueueNameAiOrchestratorCallback,
@@ -54,6 +47,7 @@ func (l locationService) Execute(ctx context.Context, request models.AiOrchestra
 			slog.String("error", err.Error()))
 		return err
 	}
+
 	return nil
 }
 

@@ -7,5 +7,5 @@ import (
 
 type QueueConsumer interface {
 	Consume(ctx context.Context, handler func(delivery amqp.Delivery)) (err error)
-	Connect(queueName string) (err error)
+	Connect() (err error)
 }

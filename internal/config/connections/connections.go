@@ -1,8 +1,8 @@
 package connections
 
 import (
-	"github.com/PesquisAi/pesquisai-api/internal/config/injector"
-	"github.com/PesquisAi/pesquisai-api/internal/config/properties"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/injector"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/properties"
 	"github.com/PesquisAi/pesquisai-database-lib/connection"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -34,12 +34,17 @@ func Connect(deps *injector.Dependencies) error {
 		return err
 	}
 
-	err = deps.QueueGemini.Connect(properties.QueueNameGemini)
+	err = deps.QueueGemini.Connect()
 	if err != nil {
 		return err
 	}
 
-	err = deps.ConsumerAiOrchestratorQueue.Connect(properties.QueueNameAiOrchestrator)
+	err = deps.ConsumerAiOrchestratorQueue.Connect()
+	if err != nil {
+		return err
+	}
+
+	err = deps.ConsumerAiOrchestratorCallbackQueue.Connect()
 	if err != nil {
 		return err
 	}

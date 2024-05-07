@@ -2,7 +2,7 @@ package interfaces
 
 import (
 	"context"
-	"github.com/PesquisAi/pesquisai-api/internal/domain/models"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/models"
 )
 
 type UseCase interface {

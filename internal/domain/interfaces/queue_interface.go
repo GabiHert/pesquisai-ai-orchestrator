@@ -6,5 +6,5 @@ import (
 
 type Queue interface {
 	Publish(ctx context.Context, b []byte) (err error)
-	Connect(queueName string) (err error)
+	Connect() (err error)
 }
