@@ -2,7 +2,7 @@ package interfaces
 
 import (
 	"context"
-	"github.com/PesquisAi/pesquisai-database-lib/models"
+	"github.com/PesquisAi/pesquisai-database-lib/sql/models"
 )
 
 type RequestRepository interface {

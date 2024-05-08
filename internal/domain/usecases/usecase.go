@@ -9,8 +9,9 @@ import (
 )
 
 type UseCase struct {
-	requestRepository interfaces.RequestRepository
-	serviceFactory    *factory.ServiceFactory
+	requestRepository      interfaces.RequestRepository
+	serviceFactory         *factory.ServiceFactory
+	orchestratorRepository interfaces.OrchestratorRepository
 }
 
 func (u UseCase) Orchestrate(ctx context.Context, request models.AiOrchestratorRequest) error {

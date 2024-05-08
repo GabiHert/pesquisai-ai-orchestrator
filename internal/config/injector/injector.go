@@ -7,8 +7,10 @@ import (
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/services"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/usecases"
-	"github.com/PesquisAi/pesquisai-database-lib/connection"
-	"github.com/PesquisAi/pesquisai-database-lib/repositories"
+	nosql "github.com/PesquisAi/pesquisai-database-lib/nosql/connection"
+	nosqlrepositories "github.com/PesquisAi/pesquisai-database-lib/nosql/repositories"
+	sql "github.com/PesquisAi/pesquisai-database-lib/sql/connection"
+	sqlrepositories "github.com/PesquisAi/pesquisai-database-lib/sql/repositories"
 	"github.com/PesquisAi/pesquisai-rabbitmq-lib/rabbitmq"
 	"gorm.io/gorm"
 	"net/http"
@@ -18,7 +20,9 @@ type Dependencies struct {
 	Mux                                 *http.ServeMux
 	Controller                          interfaces.Controller
 	RequestRepository                   interfaces.RequestRepository
-	DatabaseConnection                  *connection.Connection
+	OrchestratorRepository              interfaces.OrchestratorRepository
+	DatabaseSqlConnection               *sql.Connection
+	DatabaseNoSqlConnection             *nosql.Connection
 	QueueConnection                     *rabbitmq.Connection
 	UseCase                             interfaces.UseCase
 	QueueGemini                         interfaces.Queue
@@ -30,8 +34,16 @@ type Dependencies struct {
 }
 
 func (d *Dependencies) Inject() *Dependencies {
-	if d.DatabaseConnection == nil {
-		d.DatabaseConnection = &connection.Connection{DB: &gorm.DB{}}
+	if d.DatabaseSqlConnection == nil {
+		d.DatabaseSqlConnection = &sql.Connection{DB: &gorm.DB{}}
+	}
+
+	if d.DatabaseNoSqlConnection == nil {
+		d.DatabaseNoSqlConnection = &nosql.Connection{}
+	}
+
+	if d.OrchestratorRepository == nil {
+		d.OrchestratorRepository = &nosqlrepositories.Repository{}
 	}
 
 	if d.Mux == nil {
@@ -39,7 +51,7 @@ func (d *Dependencies) Inject() *Dependencies {
 	}
 
 	if d.RequestRepository == nil {
-		d.RequestRepository = &repositories.Request{Connection: d.DatabaseConnection}
+		d.RequestRepository = &sqlrepositories.Request{Connection: d.DatabaseSqlConnection}
 	}
 
 	if d.QueueConnection == nil {

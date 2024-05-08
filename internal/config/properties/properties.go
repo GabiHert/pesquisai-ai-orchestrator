@@ -8,6 +8,9 @@ const (
 	QueueNameAiOrchestrator         = "ai-orchestrator"
 	QueueNameAiOrchestratorCallback = "ai-orchestrator-callback"
 	QueueNameStatusManager          = "status-manager"
+
+	DatabaseNoSqlName                  = "pesquisai"
+	DatabaseOrchestratorCollectionName = "orchestrator"
 )
 
 func CreateQueueIfNX() bool {
@@ -30,22 +33,29 @@ func QueueConnectionPassword() string {
 	return os.Getenv("QUEUE_CONNECTION_PASSWORD")
 }
 
-func DatabaseConnectionUser() string {
-	return os.Getenv("DATABASE_CONNECTION_USER")
+func DatabaseSqlConnectionUser() string {
+	return os.Getenv("DATABASE_SQL_CONNECTION_USER")
 }
 
-func DatabaseConnectionHost() string {
-	return os.Getenv("DATABASE_CONNECTION_HOST")
+func DatabaseSqlConnectionHost() string {
+	return os.Getenv("DATABASE_SQL_CONNECTION_HOST")
 }
 
-func DatabaseConnectionName() string {
-	return os.Getenv("DATABASE_CONNECTION_NAME")
+func DatabaseSqlConnectionName() string {
+	return os.Getenv("DATABASE_SQL_CONNECTION_NAME")
 }
 
-func DatabaseConnectionPort() string {
-	return os.Getenv("DATABASE_CONNECTION_PORT")
+func DatabaseSqlConnectionPort() string {
+	return os.Getenv("DATABASE_SQL_CONNECTION_PORT")
 }
 
-func DatabaseConnectionPassword() string {
-	return os.Getenv("DATABASE_CONNECTION_PASSWORD")
+func DatabaseSqlConnectionPassword() string {
+	return os.Getenv("DATABASE_SQL_CONNECTION_PASSWORD")
+}
+
+func DatabaseNoSqlConnectionHost() string {
+	return os.Getenv("DATABASE_NO_SQL_CONNECTION_HOST")
+}
+func DatabaseNoSqlConnectionPort() string {
+	return os.Getenv("DATABASE_NO_SQL_CONNECTION_PORT")
 }
