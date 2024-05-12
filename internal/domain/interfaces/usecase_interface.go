@@ -7,4 +7,5 @@ import (
 
 type UseCase interface {
 	Orchestrate(ctx context.Context, request models.AiOrchestratorRequest) error
+	OrchestrateCallback(ctx context.Context, request models.AiOrchestratorCallbackRequest) error
 }

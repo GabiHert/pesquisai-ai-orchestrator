@@ -5,7 +5,6 @@ import (
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/errortypes"
 	enumactions "github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/enums/actions"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
-	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/models"
 )
 
 type ServiceFactory struct {
@@ -17,8 +16,8 @@ type ServiceFactory struct {
 	SummarizeService        interfaces.Service
 }
 
-func (sf ServiceFactory) Factory(request models.AiOrchestratorRequest) (interfaces.Service, error) {
-	switch *request.Action {
+func (sf ServiceFactory) Factory(action string) (interfaces.Service, error) {
+	switch action {
 	case enumactions.LOCATION:
 		return sf.LocationService, nil
 	case enumactions.LANGUAGE:
@@ -32,5 +31,5 @@ func (sf ServiceFactory) Factory(request models.AiOrchestratorRequest) (interfac
 	case enumactions.SUMMARIZE:
 		return sf.SummarizeService, nil
 	}
-	return nil, errortypes.NewServiceNotFoundException(fmt.Sprintf("Service for action '%s' not found", *request.Action))
+	return nil, errortypes.NewServiceNotFoundException(fmt.Sprintf("Service for action '%s' not found", action))
 }

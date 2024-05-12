@@ -25,7 +25,8 @@ func getError(tag string, field string) string {
 		case "research":
 			return "'research' should have at least '10' characters"
 		}
-
+	case "uuid":
+		return fmt.Sprintf("'%s' should be an uuid", field)
 	}
 
 	return ""
@@ -40,7 +41,22 @@ func getField(field string) string {
 	return ""
 }
 
-func Validate(request *dtos.AiOrchestratorRequest) error {
+func ValidateRequest(request *dtos.AiOrchestratorRequest) error {
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	err := validate.Struct(request)
+	if err == nil {
+		return nil
+	}
+
+	var messages []string
+	for _, err := range err.(validator.ValidationErrors) {
+		messages = append(messages, getError(err.ActualTag(), getField(err.Field())))
+	}
+
+	return errortypes.NewValidationException(messages...)
+}
+
+func ValidateCallbackRequest(request *dtos.AiOrchestratorCallbackRequest) error {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	err := validate.Struct(request)
 	if err == nil {

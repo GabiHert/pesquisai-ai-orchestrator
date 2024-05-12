@@ -14,6 +14,31 @@ type UseCase struct {
 	orchestratorRepository interfaces.OrchestratorRepository
 }
 
+func (u UseCase) OrchestrateCallback(ctx context.Context, request models.AiOrchestratorCallbackRequest) error {
+	slog.InfoContext(ctx, "useCase.Orchestrate",
+		slog.String("details", "process started"))
+
+	service, err := u.serviceFactory.FactoryCallback(request)
+	if err != nil {
+		slog.ErrorContext(ctx, "useCase.Orchestrate",
+			slog.String("details", "process error"),
+			slog.String("error", err.Error()))
+		return err
+	}
+
+	err = service.Execute(ctx, request)
+	if err != nil {
+		slog.ErrorContext(ctx, "useCase.Orchestrate",
+			slog.String("details", "process error"),
+			slog.String("error", err.Error()))
+		return err
+	}
+
+	slog.DebugContext(ctx, "useCase.Orchestrate",
+		slog.String("details", "process finished"))
+	return nil
+}
+
 func (u UseCase) Orchestrate(ctx context.Context, request models.AiOrchestratorRequest) error {
 	slog.InfoContext(ctx, "useCase.Orchestrate",
 		slog.String("details", "process started"))

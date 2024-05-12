@@ -48,7 +48,7 @@ func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) {
 		return
 	}
 
-	err = validations.Validate(&request)
+	err = validations.ValidateRequest(&request)
 	if err != nil {
 		c.errorHandler(err)
 		return
@@ -77,8 +77,45 @@ func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) {
 }
 
 func (c controller) AiOrchestratorCallbackHandler(delivery amqp.Delivery) {
-	//TODO implement me
-	panic("implement me")
+	defer c.def()
+	slog.Info("controller.AiOrchestratorCallbackHandler",
+		slog.String("details", "process started"),
+		slog.String("messageId", delivery.MessageId),
+		slog.String("userId", delivery.UserId))
+
+	var callback dtos.AiOrchestratorCallbackRequest
+	err := parser.ParseDeliveryJSON(&callback, delivery)
+	if err != nil {
+		c.errorHandler(err)
+		return
+	}
+
+	err = validations.ValidateCallbackRequest(&callback)
+	if err != nil {
+		c.errorHandler(err)
+		return
+	}
+
+	requestModel := models.AiOrchestratorCallbackRequest{
+		RequestId:  callback.RequestId,
+		ResearchId: callback.ResearchId,
+		Response:   callback.Response,
+		Action:     callback.Forward.Action,
+	}
+
+	err = c.useCase.OrchestrateCallback(context.Background(), requestModel)
+	if err != nil {
+		c.errorHandler(err)
+		return
+	}
+
+	slog.Info("controller.AiOrchestratorCallbackHandler",
+		slog.String("details", "process finished"))
+	err = delivery.Ack(false)
+	if err != nil {
+		c.errorHandler(err)
+		return
+	}
 }
 
 func NewController(useCase interfaces.UseCase) interfaces.Controller {
