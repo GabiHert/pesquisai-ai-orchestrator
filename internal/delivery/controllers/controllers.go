@@ -18,7 +18,7 @@ type controller struct {
 	useCase interfaces.UseCase
 }
 
-func (c controller) errorHandler(err error) {
+func (c controller) errorHandler(err error) error {
 	exception := &exceptions.Error{}
 	if !errors.As(err, &exception) {
 		exception = errortypes.NewUnknownException(err.Error())
@@ -28,13 +28,15 @@ func (c controller) errorHandler(err error) {
 	slog.Error("controller.errorHandler",
 		slog.String("details", "process error"),
 		slog.String("errorType", string(b)))
+
+	return nil
 }
 
 func (c controller) def() {
 
 }
 
-func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) {
+func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) error {
 	defer c.def()
 	slog.Info("controller.AiOrchestratorHandler",
 		slog.String("details", "process started"),
@@ -44,14 +46,12 @@ func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) {
 	var request dtos.AiOrchestratorRequest
 	err := parser.ParseDeliveryJSON(&request, delivery)
 	if err != nil {
-		c.errorHandler(err)
-		return
+		return c.errorHandler(err)
 	}
 
 	err = validations.ValidateRequest(&request)
 	if err != nil {
-		c.errorHandler(err)
-		return
+		return c.errorHandler(err)
 	}
 
 	requestModel := models.AiOrchestratorRequest{
@@ -63,20 +63,15 @@ func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) {
 
 	err = c.useCase.Orchestrate(context.Background(), requestModel)
 	if err != nil {
-		c.errorHandler(err)
-		return
+		return c.errorHandler(err)
 	}
 
 	slog.Info("controller.AiOrchestratorHandler",
 		slog.String("details", "process finished"))
-	err = delivery.Ack(false)
-	if err != nil {
-		c.errorHandler(err)
-		return
-	}
+	return nil
 }
 
-func (c controller) AiOrchestratorCallbackHandler(delivery amqp.Delivery) {
+func (c controller) AiOrchestratorCallbackHandler(delivery amqp.Delivery) error {
 	defer c.def()
 	slog.Info("controller.AiOrchestratorCallbackHandler",
 		slog.String("details", "process started"),
@@ -86,14 +81,12 @@ func (c controller) AiOrchestratorCallbackHandler(delivery amqp.Delivery) {
 	var callback dtos.AiOrchestratorCallbackRequest
 	err := parser.ParseDeliveryJSON(&callback, delivery)
 	if err != nil {
-		c.errorHandler(err)
-		return
+		return c.errorHandler(err)
 	}
 
 	err = validations.ValidateCallbackRequest(&callback)
 	if err != nil {
-		c.errorHandler(err)
-		return
+		return c.errorHandler(err)
 	}
 
 	requestModel := models.AiOrchestratorCallbackRequest{
@@ -105,17 +98,13 @@ func (c controller) AiOrchestratorCallbackHandler(delivery amqp.Delivery) {
 
 	err = c.useCase.OrchestrateCallback(context.Background(), requestModel)
 	if err != nil {
-		c.errorHandler(err)
-		return
+		return c.errorHandler(err)
 	}
 
 	slog.Info("controller.AiOrchestratorCallbackHandler",
 		slog.String("details", "process finished"))
-	err = delivery.Ack(false)
-	if err != nil {
-		c.errorHandler(err)
-		return
-	}
+
+	return nil
 }
 
 func NewController(useCase interfaces.UseCase) interfaces.Controller {

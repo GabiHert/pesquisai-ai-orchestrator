@@ -18,7 +18,7 @@ func (u UseCase) OrchestrateCallback(ctx context.Context, request models.AiOrche
 	slog.InfoContext(ctx, "useCase.Orchestrate",
 		slog.String("details", "process started"))
 
-	service, err := u.serviceFactory.FactoryCallback(request)
+	service, err := u.serviceFactory.Factory(*request.Action)
 	if err != nil {
 		slog.ErrorContext(ctx, "useCase.Orchestrate",
 			slog.String("details", "process error"),
@@ -26,7 +26,7 @@ func (u UseCase) OrchestrateCallback(ctx context.Context, request models.AiOrche
 		return err
 	}
 
-	err = service.Execute(ctx, request)
+	err = service.Callback(ctx, request)
 	if err != nil {
 		slog.ErrorContext(ctx, "useCase.Orchestrate",
 			slog.String("details", "process error"),
@@ -43,7 +43,7 @@ func (u UseCase) Orchestrate(ctx context.Context, request models.AiOrchestratorR
 	slog.InfoContext(ctx, "useCase.Orchestrate",
 		slog.String("details", "process started"))
 
-	service, err := u.serviceFactory.Factory(request)
+	service, err := u.serviceFactory.Factory(*request.Action)
 	if err != nil {
 		slog.ErrorContext(ctx, "useCase.Orchestrate",
 			slog.String("details", "process error"),

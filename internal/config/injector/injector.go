@@ -61,15 +61,16 @@ func (d *Dependencies) Inject() *Dependencies {
 	if d.QueueGemini == nil {
 		d.QueueGemini = rabbitmq.NewQueue(d.QueueConnection,
 			properties.QueueNameGemini,
-			rabbitmq.CONTENT_TYPE_JSON,
-			properties.CreateQueueIfNX())
+			rabbitmq.ContentTypeJson,
+			properties.CreateQueueIfNX(),
+			false, false)
 	}
 
 	if d.QueueStatusManager == nil {
 		d.QueueStatusManager = rabbitmq.NewQueue(d.QueueConnection,
 			properties.QueueNameStatusManager,
-			rabbitmq.CONTENT_TYPE_JSON,
-			properties.CreateQueueIfNX())
+			rabbitmq.ContentTypeJson,
+			properties.CreateQueueIfNX(), false, false)
 	}
 
 	if d.ServiceFactory == nil {
@@ -91,8 +92,8 @@ func (d *Dependencies) Inject() *Dependencies {
 		queue := rabbitmq.NewQueue(
 			d.QueueConnection,
 			properties.QueueNameAiOrchestrator,
-			rabbitmq.CONTENT_TYPE_JSON,
-			properties.CreateQueueIfNX())
+			rabbitmq.ContentTypeJson,
+			properties.CreateQueueIfNX(), true, true)
 		d.ConsumerAiOrchestratorQueue = queue
 		d.QueueAiOrchestrator = queue
 	}
@@ -101,8 +102,9 @@ func (d *Dependencies) Inject() *Dependencies {
 		d.ConsumerAiOrchestratorCallbackQueue = rabbitmq.NewQueue(
 			d.QueueConnection,
 			properties.QueueNameAiOrchestratorCallback,
-			rabbitmq.CONTENT_TYPE_JSON,
-			properties.CreateQueueIfNX())
+			rabbitmq.ContentTypeJson,
+			properties.CreateQueueIfNX(),
+			true, true)
 	}
 
 	if d.Controller == nil {

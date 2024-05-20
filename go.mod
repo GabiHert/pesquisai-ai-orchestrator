@@ -3,12 +3,13 @@ module github.com/PesquisAi/pesquisai-ai-orchestrator
 go 1.22.1
 
 require (
-	github.com/PesquisAi/pesquisai-database-lib v0.2.2
-	github.com/PesquisAi/pesquisai-errors-lib v0.0.8
-	github.com/PesquisAi/pesquisai-rabbitmq-lib v0.1.0
+	github.com/PesquisAi/pesquisai-database-lib v0.2.6
+	github.com/PesquisAi/pesquisai-errors-lib v0.1.0
+	github.com/PesquisAi/pesquisai-rabbitmq-lib v0.2.1
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rabbitmq/amqp091-go v1.9.0
+	go.mongodb.org/mongo-driver v1.15.0
 	gorm.io/gorm v1.25.9
 )
 
@@ -30,7 +31,6 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
-	go.mongodb.org/mongo-driver v1.15.0 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
