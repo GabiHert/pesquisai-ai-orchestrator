@@ -10,6 +10,7 @@ import (
 )
 
 func Connect(deps *injector.Dependencies) error {
+
 	err := deps.DatabaseSqlConnection.Connect(connection.Config{
 		User: properties.DatabaseSqlConnectionUser(),
 		Host: properties.DatabaseSqlConnectionHost(),
@@ -34,6 +35,10 @@ func Connect(deps *injector.Dependencies) error {
 		return err
 	}
 
+	deps.OrchestratorRepository.Connect(
+		properties.DatabaseNoSqlName,
+		properties.DatabaseOrchestratorCollectionName)
+
 	err = deps.QueueConnection.Connect(
 		properties.QueueConnectionUser(),
 		properties.QueueConnectionPassword(),
@@ -45,6 +50,11 @@ func Connect(deps *injector.Dependencies) error {
 	}
 
 	err = deps.QueueGemini.Connect()
+	if err != nil {
+		return err
+	}
+
+	err = deps.QueueAiOrchestrator.Connect()
 	if err != nil {
 		return err
 	}

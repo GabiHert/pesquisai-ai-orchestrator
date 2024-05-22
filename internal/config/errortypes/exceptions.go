@@ -42,3 +42,14 @@ func NewServiceNotFoundException(messages ...string) *exceptions.Error {
 			HttpStatusCode: http.StatusNotFound,
 		}}
 }
+
+func NewInvalidAIResponseException(messages ...string) *exceptions.Error {
+	return &exceptions.Error{
+		Messages: messages,
+		ErrorType: exceptions.ErrorType{
+			Code:           "PAPI05",
+			Type:           "Invalid AI response",
+			HttpStatusCode: http.StatusBadRequest,
+		},
+	}
+}

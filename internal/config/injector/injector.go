@@ -43,7 +43,7 @@ func (d *Dependencies) Inject() *Dependencies {
 	}
 
 	if d.OrchestratorRepository == nil {
-		d.OrchestratorRepository = &nosqlrepositories.Repository{}
+		d.OrchestratorRepository = &nosqlrepositories.Repository{Connection: d.DatabaseNoSqlConnection}
 	}
 
 	if d.Mux == nil {
@@ -73,21 +73,6 @@ func (d *Dependencies) Inject() *Dependencies {
 			properties.CreateQueueIfNX(), false, false)
 	}
 
-	if d.ServiceFactory == nil {
-		d.ServiceFactory = &factory.ServiceFactory{
-			LocationService:         services.NewLocationService(d.QueueGemini),
-			LanguageService:         nil,
-			SentencesService:        nil,
-			WorthCheckingService:    nil,
-			WorthSummarizingService: nil,
-			SummarizeService:        nil,
-		}
-	}
-
-	if d.UseCase == nil {
-		d.UseCase = usecases.NewUseCase(d.RequestRepository, d.ServiceFactory)
-	}
-
 	if d.ConsumerAiOrchestratorQueue == nil || d.QueueAiOrchestrator == nil {
 		queue := rabbitmq.NewQueue(
 			d.QueueConnection,
@@ -105,6 +90,21 @@ func (d *Dependencies) Inject() *Dependencies {
 			rabbitmq.ContentTypeJson,
 			properties.CreateQueueIfNX(),
 			true, true)
+	}
+
+	if d.ServiceFactory == nil {
+		d.ServiceFactory = &factory.ServiceFactory{
+			LocationService:         services.NewLocationService(d.QueueGemini, d.QueueAiOrchestrator, d.OrchestratorRepository, d.RequestRepository),
+			LanguageService:         services.NewLanguageService(d.QueueGemini, d.QueueAiOrchestrator, d.OrchestratorRepository, d.RequestRepository),
+			SentencesService:        nil,
+			WorthCheckingService:    nil,
+			WorthSummarizingService: nil,
+			SummarizeService:        nil,
+		}
+	}
+
+	if d.UseCase == nil {
+		d.UseCase = usecases.NewUseCase(d.RequestRepository, d.ServiceFactory)
 	}
 
 	if d.Controller == nil {

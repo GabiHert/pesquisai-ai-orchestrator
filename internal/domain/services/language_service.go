@@ -11,46 +11,47 @@ import (
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/models"
 	nosqlmodels "github.com/PesquisAi/pesquisai-database-lib/nosql/models"
-	enumlocations "github.com/PesquisAi/pesquisai-database-lib/sql/enums/locations"
+	enumlanguages "github.com/PesquisAi/pesquisai-database-lib/sql/enums/languages"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/sync/errgroup"
 	"log/slog"
 	"slices"
 	"strings"
-	"time"
 )
 
 const (
-	locationQuestionTemplate = `You are a part of a major project. In this project I will perform a google search, and your only` +
-		` responsibility is to answer me, given the context of the pearson/company that are asking and the desired research,` +
-		` what are the best countries that I should filter the Google search results. You should answer with a list of 2 digit ` +
-		`country codes. Respond only with a comma separated list of country codes, nothing else. ` +
-		`Here I have a list of the codes you can use: %s. context:"%s". research:"%s".`
+	questionTemplate = `You are a part of a major project. In this project I will perform a google search, and your only` +
+		` responsibility is to answer me, given the context of the pearson/company that are asking, the desired research` +
+		` and the countries that will be used filter the results, what are the best languages that I should use to filter the Google search results. You should answer with a list of 2 digit ` +
+		`language codes. Respond only with a comma separated list of language codes, nothing else. ` +
+		`Here I have a list of the codes you can use: %s. context:"%s". research:"%s". countries:"%s".`
 )
 
-type locationService struct {
+type languageService struct {
 	queueGemini            interfaces.Queue
 	queueOrchestrator      interfaces.Queue
 	requestRepository      interfaces.RequestRepository
 	orchestratorRepository interfaces.OrchestratorRepository
 }
 
-func (l locationService) validateGeminiResponse(response []string) error {
+func (l languageService) validateGeminiResponse(response []string) error {
 	for _, split := range response {
-		if !slices.Contains(enumlocations.Locations, split) {
-			return errortypes.NewInvalidAIResponseException(fmt.Sprintf("%s is not a valid location", split))
+		if !slices.Contains(enumlanguages.Languages, split) {
+			return errortypes.NewInvalidAIResponseException(fmt.Sprintf("%s is not a valid language", split))
 		}
 	}
 	return nil
 }
-
-func (l locationService) validateRequest(request models.AiOrchestratorRequest) error {
+func (l languageService) validateOrchestratorData(request nosqlmodels.Request) error {
 	var messages []string
 	if request.Context == nil {
-		messages = append(messages, `"context" is required`)
+		messages = append(messages, `"context" is required in mongoDB to perform language service`)
 	}
 	if request.Research == nil {
-		messages = append(messages, `"research" is required`)
+		messages = append(messages, `"research" is required in mongoDB to perform language service`)
+	}
+	if request.Locations == nil {
+		messages = append(messages, `"locations" is required in mongoDB to perform language service`)
 	}
 	if len(messages) > 0 {
 		return errortypes.NewValidationException(messages...)
@@ -58,47 +59,43 @@ func (l locationService) validateRequest(request models.AiOrchestratorRequest) e
 	return nil
 }
 
-func (l locationService) Execute(ctx context.Context, request models.AiOrchestratorRequest) error {
-	slog.InfoContext(ctx, "locationService.Execute",
+func (l languageService) Execute(ctx context.Context, request models.AiOrchestratorRequest) error {
+	slog.InfoContext(ctx, "languageService.Execute",
 		slog.String("details", "process started"))
 
-	err := l.validateRequest(request)
+	var orchestratorData nosqlmodels.Request
+	err := l.orchestratorRepository.GetById(ctx, *request.RequestId, &orchestratorData)
 	if err != nil {
-		slog.ErrorContext(ctx, "locationService.Execute",
+		slog.ErrorContext(ctx, "languageService.Execute",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
 
-	createdAt := time.Now().UTC()
-	err = l.orchestratorRepository.Create(ctx, &nosqlmodels.Request{
-		ID:        request.RequestId,
-		Context:   request.Context,
-		Research:  request.Research,
-		CreatedAt: &createdAt,
-		UpdatedAt: &createdAt,
-	})
+	err = l.validateOrchestratorData(orchestratorData)
 	if err != nil {
-		slog.ErrorContext(ctx, "locationService.Execute",
+		slog.ErrorContext(ctx, "languageService.Execute",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
 
 	question := fmt.Sprintf(
-		locationQuestionTemplate,
-		strings.Join(enumlocations.Locations, ","),
-		*request.Context,
-		*request.Research)
+		questionTemplate,
+		strings.Join(enumlanguages.Languages, ","),
+		*orchestratorData.Context,
+		*orchestratorData.Research,
+		strings.Join(*orchestratorData.Locations, ","),
+	)
 
 	b, err := builder.BuildQueueGeminiMessage(
 		*request.RequestId,
 		question,
 		properties.QueueNameAiOrchestratorCallback,
-		enumactions.LOCATION,
+		enumactions.LANGUAGE,
 	)
 	if err != nil {
-		slog.ErrorContext(ctx, "locationService.Execute",
+		slog.ErrorContext(ctx, "languageService.Execute",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
@@ -106,7 +103,7 @@ func (l locationService) Execute(ctx context.Context, request models.AiOrchestra
 
 	err = l.queueGemini.Publish(ctx, b)
 	if err != nil {
-		slog.ErrorContext(ctx, "locationService.Execute",
+		slog.ErrorContext(ctx, "languageService.Execute",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
@@ -115,24 +112,24 @@ func (l locationService) Execute(ctx context.Context, request models.AiOrchestra
 	return nil
 }
 
-func (l locationService) Callback(ctx context.Context, callback models.AiOrchestratorCallbackRequest) error {
-	slog.InfoContext(ctx, "locationService.Callback",
+func (l languageService) Callback(ctx context.Context, callback models.AiOrchestratorCallbackRequest) error {
+	slog.InfoContext(ctx, "languageService.Callback",
 		slog.String("details", "process started"))
 
-	locations := strings.Split(strings.ToLower(*callback.Response), ",")
-	err := l.validateGeminiResponse(locations)
+	languages := strings.Split(strings.ToLower(*callback.Response), ",")
+	err := l.validateGeminiResponse(languages)
 	if err != nil {
-		slog.ErrorContext(ctx, "locationService.Callback",
+		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
 
 	g, groupCtx := errgroup.WithContext(ctx)
-	for _, location := range locations {
+	for _, language := range languages {
 		g.Go(func() error {
-			e := l.requestRepository.RelateLocation(groupCtx, *callback.RequestId, location)
-			if strings.Contains(e.Error(), `unique constraint "request_locations_pkey"`) {
+			e := l.requestRepository.RelateLanguage(groupCtx, *callback.RequestId, language)
+			if strings.Contains(e.Error(), `unique constraint "request_languages_pkey"`) {
 				return nil
 			}
 			return e
@@ -141,17 +138,17 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 
 	err = g.Wait()
 	if err != nil {
-		slog.ErrorContext(ctx, "locationService.Callback",
+		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
 
 	err = l.orchestratorRepository.Update(ctx, *callback.RequestId,
-		bson.M{"locations": locations},
+		bson.M{"languages": languages},
 	)
 	if err != nil {
-		slog.ErrorContext(ctx, "locationService.Callback",
+		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
@@ -166,7 +163,7 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 		Action:    &action,
 	})
 	if err != nil {
-		slog.ErrorContext(ctx, "locationService.Callback",
+		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
@@ -174,19 +171,18 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 
 	err = l.queueOrchestrator.Publish(ctx, b)
 	if err != nil {
-		slog.ErrorContext(ctx, "locationService.Callback",
+		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
 
-	slog.InfoContext(ctx, "locationService.Callback",
+	slog.InfoContext(ctx, "languageService.Callback",
 		slog.String("details", "process finished"))
 	return nil
 }
-
-func NewLocationService(queueGemini, queueOrchestrator interfaces.Queue, orchestratorRepository interfaces.OrchestratorRepository, requestRepository interfaces.RequestRepository) interfaces.Service {
-	return &locationService{
+func NewLanguageService(queueGemini, queueOrchestrator interfaces.Queue, orchestratorRepository interfaces.OrchestratorRepository, requestRepository interfaces.RequestRepository) interfaces.Service {
+	return &languageService{
 		queueGemini:            queueGemini,
 		requestRepository:      requestRepository,
 		orchestratorRepository: orchestratorRepository,

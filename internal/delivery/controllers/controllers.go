@@ -29,11 +29,21 @@ func (c controller) errorHandler(err error) error {
 		slog.String("details", "process error"),
 		slog.String("errorType", string(b)))
 
-	return nil
+	if exception.Abort {
+		return nil
+	}
+	return exception
 }
 
 func (c controller) def() {
+	if r := recover(); r != nil {
+		slog.Error("controller.def",
+			slog.String("details", "process panic"),
+			slog.Any("recover", r))
 
+		err := errortypes.NewUnknownException("application panic")
+		_ = c.errorHandler(err)
+	}
 }
 
 func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) error {

@@ -7,16 +7,19 @@ import (
 type message struct {
 	RequestId   *string         `json:"request_id"`
 	Question    *string         `json:"question"`
-	OutputQueue *string         `json:"outputQueue"`
+	OutputQueue *string         `json:"output_queue"`
 	Forward     *map[string]any `json:"forward"`
 }
 
-func BuildQueueGeminiMessage(requestId, question, outputQueue string) ([]byte, error) {
+func BuildQueueGeminiMessage(requestId, question, outputQueue, action string) ([]byte, error) {
 
 	msg := &message{
 		RequestId:   &requestId,
 		Question:    &question,
 		OutputQueue: &outputQueue,
+		Forward: &map[string]any{
+			"action": action,
+		},
 	}
 
 	return json.Marshal(msg)

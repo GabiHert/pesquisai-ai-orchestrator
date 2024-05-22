@@ -1,0 +1,7 @@
+POST http://localhost:8080/v1/pesquisai
+Content-Type: application/json
+
+{
+  "context": "Tenho uma clínica de terapia ocupacional,em Porto Alegre Brasil, bem conceituada em minha cidade. Atendemos aprenas crianças e bebes até aproximadamente 13 anos. Trabalhamos muito em conjunto com fonoaudiólogos, psicólogos e psiquiátras.",
+  "research": "Preciso inovar meus estudos. Quero estar ciente de pesquisas que possam me mostrar onde devo investir meus estudos para poder evoluir minha clínica prevendo tendências que possam já estar sendo utilizadas no exterior"
+}
