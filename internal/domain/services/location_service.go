@@ -45,7 +45,7 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 	slog.InfoContext(ctx, "locationService.Callback",
 		slog.String("details", "process started"))
 
-	languages := strings.Split(*callback.Response, ",")
+	languages := strings.Split(strings.ToLower(*callback.Response), ",")
 	err := l.validateResponse(languages)
 	if err != nil {
 		slog.ErrorContext(ctx, "locationService.Callback",
@@ -57,13 +57,19 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 	g, groupCtx := errgroup.WithContext(ctx)
 	for _, language := range languages {
 		g.Go(func() error {
-			//todo: relate language
-			return nil
+			e := l.requestRepository.RelateLanguage(groupCtx, *callback.RequestId, language)
+			if strings.Contains(e.Error(), `unique constraint \"request_languages_pkey\"`) {
+				return nil
+			}
+			return e
 		})
 	}
 
 	err = g.Wait()
 	if err != nil {
+		slog.ErrorContext(ctx, "locationService.Callback",
+			slog.String("details", "process error"),
+			slog.String("error", err.Error()))
 		return err
 	}
 
@@ -103,6 +109,7 @@ func (l locationService) Execute(ctx context.Context, request models.AiOrchestra
 
 	question := fmt.Sprintf(
 		questionTemplate,
+		strings.Join(enumlocations.Locations, ","),
 		*request.Context,
 		*request.Research)
 
