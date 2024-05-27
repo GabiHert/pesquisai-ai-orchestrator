@@ -39,4 +39,8 @@ func main() {
 	}()
 
 	wg.Wait()
+
+	if err = connections.Disconnect(deps); err != nil {
+		panic(err)
+	}
 }

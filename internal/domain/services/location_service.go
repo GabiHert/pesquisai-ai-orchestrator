@@ -132,7 +132,7 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 	for _, location := range locations {
 		g.Go(func() error {
 			e := l.requestRepository.RelateLocation(groupCtx, *callback.RequestId, location)
-			if strings.Contains(e.Error(), `unique constraint "request_locations_pkey"`) {
+			if e != nil && strings.Contains(e.Error(), `unique constraint "request_locations_pkey"`) {
 				return nil
 			}
 			return e

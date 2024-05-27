@@ -71,3 +71,33 @@ func Connect(deps *injector.Dependencies) error {
 
 	return nil
 }
+
+func Disconnect(deps *injector.Dependencies) error {
+
+	err := deps.DatabaseSqlConnection.Connect(connection.Config{
+		User: properties.DatabaseSqlConnectionUser(),
+		Host: properties.DatabaseSqlConnectionHost(),
+		Psw:  properties.DatabaseSqlConnectionPassword(),
+		Name: properties.DatabaseSqlConnectionName(),
+		Port: properties.DatabaseSqlConnectionPort(),
+		GormConfig: gorm.Config{
+			NamingStrategy: schema.NamingStrategy{
+				TablePrefix: properties.DatabaseTablePrefix,
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = deps.DatabaseNoSqlConnection.Disconnect(context.Background())
+	if err != nil {
+		return err
+	}
+	err = deps.QueueConnection.Disconnect()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

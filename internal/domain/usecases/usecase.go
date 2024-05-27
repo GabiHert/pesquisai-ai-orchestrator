@@ -15,12 +15,13 @@ type UseCase struct {
 }
 
 func (u UseCase) OrchestrateCallback(ctx context.Context, request models.AiOrchestratorCallbackRequest) error {
-	slog.InfoContext(ctx, "useCase.Orchestrate",
-		slog.String("details", "process started"))
+	slog.InfoContext(ctx, "useCase.OrchestrateCallback",
+		slog.String("details", "process started"),
+		slog.String("action", *request.Action))
 
 	service, err := u.serviceFactory.Factory(*request.Action)
 	if err != nil {
-		slog.ErrorContext(ctx, "useCase.Orchestrate",
+		slog.ErrorContext(ctx, "useCase.OrchestrateCallback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
@@ -28,20 +29,22 @@ func (u UseCase) OrchestrateCallback(ctx context.Context, request models.AiOrche
 
 	err = service.Callback(ctx, request)
 	if err != nil {
-		slog.ErrorContext(ctx, "useCase.Orchestrate",
+		slog.ErrorContext(ctx, "useCase.OrchestrateCallback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
 
-	slog.DebugContext(ctx, "useCase.Orchestrate",
+	slog.DebugContext(ctx, "useCase.OrchestrateCallback",
 		slog.String("details", "process finished"))
 	return nil
 }
 
 func (u UseCase) Orchestrate(ctx context.Context, request models.AiOrchestratorRequest) error {
 	slog.InfoContext(ctx, "useCase.Orchestrate",
-		slog.String("details", "process started"))
+		slog.String("details", "process started"),
+		slog.String("action", *request.Action),
+	)
 
 	service, err := u.serviceFactory.Factory(*request.Action)
 	if err != nil {

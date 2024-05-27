@@ -20,21 +20,21 @@ import (
 )
 
 const (
-	questionTemplate = `You are a part of a major project. In this project I will perform a google search, and your only` +
+	sentenceQuestionTemplate = `You are a part of a major project. In this project I will perform a google search, and your only` +
 		` responsibility is to answer me, given the context of the pearson/company that are asking, the desired research` +
 		` and the countries that will be used filter the results, what are the best languages that I should use to filter the Google search results. You should answer with a list of 2 digit ` +
 		`language codes. Respond only with a comma separated list of language codes, nothing else. ` +
 		`Here I have a list of the codes you can use: %s. context:"%s". research:"%s". countries:"%s".`
 )
 
-type languageService struct {
+type sentenceService struct {
 	queueGemini            interfaces.Queue
-	queueOrchestrator      interfaces.Queue
+	queueGoogleSearch      interfaces.Queue
 	requestRepository      interfaces.RequestRepository
 	orchestratorRepository interfaces.OrchestratorRepository
 }
 
-func (l languageService) validateGeminiResponse(response []string) ([]string, error) {
+func (l sentenceService) validateGeminiResponse(response []string) ([]string, error) {
 	var errorMessages, res []string
 	for i, split := range response {
 		if strings.Contains(split, "-") {
@@ -55,7 +55,7 @@ func (l languageService) validateGeminiResponse(response []string) ([]string, er
 
 	return res, nil
 }
-func (l languageService) validateOrchestratorData(request nosqlmodels.Request) error {
+func (l sentenceService) validateOrchestratorData(request nosqlmodels.Request) error {
 	var messages []string
 	if request.Context == nil {
 		messages = append(messages, `"context" is required in mongoDB to perform language service`)
@@ -72,7 +72,7 @@ func (l languageService) validateOrchestratorData(request nosqlmodels.Request) e
 	return nil
 }
 
-func (l languageService) Execute(ctx context.Context, request models.AiOrchestratorRequest) error {
+func (l sentenceService) Execute(ctx context.Context, request models.AiOrchestratorRequest) error {
 	slog.InfoContext(ctx, "languageService.Execute",
 		slog.String("details", "process started"))
 
@@ -125,7 +125,7 @@ func (l languageService) Execute(ctx context.Context, request models.AiOrchestra
 	return nil
 }
 
-func (l languageService) Callback(ctx context.Context, callback models.AiOrchestratorCallbackRequest) error {
+func (l sentenceService) Callback(ctx context.Context, callback models.AiOrchestratorCallbackRequest) error {
 	slog.InfoContext(ctx, "languageService.Callback",
 		slog.String("details", "process started"))
 
@@ -182,7 +182,7 @@ func (l languageService) Callback(ctx context.Context, callback models.AiOrchest
 		return err
 	}
 
-	err = l.queueOrchestrator.Publish(ctx, b)
+	err = l.queueGoogleSearch.Publish(ctx, b)
 	if err != nil {
 		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),
@@ -194,7 +194,7 @@ func (l languageService) Callback(ctx context.Context, callback models.AiOrchest
 		slog.String("details", "process finished"))
 	return nil
 }
-func NewLanguageService(queueGemini, queueOrchestrator interfaces.Queue, orchestratorRepository interfaces.OrchestratorRepository, requestRepository interfaces.RequestRepository) interfaces.Service {
+func NewSentenceService(queueGemini, queueOrchestrator interfaces.Queue, orchestratorRepository interfaces.OrchestratorRepository, requestRepository interfaces.RequestRepository) interfaces.Service {
 	return &languageService{
 		queueGemini:            queueGemini,
 		requestRepository:      requestRepository,
