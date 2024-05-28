@@ -3,9 +3,9 @@ module github.com/PesquisAi/pesquisai-ai-orchestrator
 go 1.22.1
 
 require (
-	github.com/PesquisAi/pesquisai-database-lib v0.2.10
+	github.com/PesquisAi/pesquisai-database-lib v0.2.11
 	github.com/PesquisAi/pesquisai-errors-lib v0.1.1
-	github.com/PesquisAi/pesquisai-rabbitmq-lib v0.2.1
+	github.com/PesquisAi/pesquisai-rabbitmq-lib v0.2.2
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rabbitmq/amqp091-go v1.9.0

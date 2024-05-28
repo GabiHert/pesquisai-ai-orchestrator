@@ -59,6 +59,11 @@ func Connect(deps *injector.Dependencies) error {
 		return err
 	}
 
+	err = deps.QueueGoogleSearch.Connect()
+	if err != nil {
+		return err
+	}
+
 	err = deps.ConsumerAiOrchestratorQueue.Connect()
 	if err != nil {
 		return err

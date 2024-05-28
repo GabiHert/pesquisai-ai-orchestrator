@@ -20,7 +20,7 @@ type controller struct {
 
 func (c controller) errorHandler(err error) error {
 	exception := &exceptions.Error{}
-	if !errors.As(err, &exception) {
+	if !errors.As(err, exception) {
 		exception = errortypes.NewUnknownException(err.Error())
 	}
 

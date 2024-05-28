@@ -23,8 +23,9 @@ const (
 	questionTemplate = `You are a part of a major project. In this project I will perform a google search, and your only` +
 		` responsibility is to answer me, given the context of the pearson/company that are asking, the desired research` +
 		` and the countries that will be used filter the results, what are the best languages that I should use to filter the Google search results. You should answer with a list of 2 digit ` +
-		`language codes. Respond only with a comma separated list of language codes, nothing else. ` +
-		`Here I have a list of the codes you can use: %s. context:"%s". research:"%s". countries:"%s".`
+		`language codes. Respond only with a comma separated list of language codes, nothing else. Consider that if the research will be filtered by the countries below, makes sense to match the country languages.` +
+		` But any language that makes sense in the research context must be use.` +
+		`Here I have a list of the codes you can use: %s. person/company context:"%s". research:"%s". countries:"%s".`
 )
 
 type languageService struct {

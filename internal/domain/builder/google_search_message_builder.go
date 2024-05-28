@@ -2,9 +2,12 @@ package builder
 
 import (
 	"encoding/json"
-	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/delivery/dtos"
 )
 
-func BuildQueueGoogleSearchMessage(orchestratorDto dtos.AiOrchestratorRequest) ([]byte, error) {
-	return json.Marshal(&orchestratorDto)
+type googleSearchMessage struct {
+	RequestId string `json:"request_id"`
+}
+
+func BuildQueueGoogleSearchMessage(requestId string) ([]byte, error) {
+	return json.Marshal(&googleSearchMessage{RequestId: requestId})
 }

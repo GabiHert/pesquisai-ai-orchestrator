@@ -25,7 +25,7 @@ const (
 		` responsibility is to answer me, given the context of the pearson/company that are asking and the desired research,` +
 		` what are the best countries that I should filter the Google search results. You should answer with a list of 2 digit ` +
 		`country codes. Respond only with a comma separated list of country codes, nothing else. ` +
-		`Here I have a list of the codes you can use: %s. context:"%s". research:"%s".`
+		`Here I have a list of the codes you can use: %s. person/company context:"%s". research:"%s".`
 )
 
 type locationService struct {

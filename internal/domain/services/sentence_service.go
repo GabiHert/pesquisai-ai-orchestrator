@@ -5,66 +5,52 @@ import (
 	"fmt"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/errortypes"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/properties"
-	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/delivery/dtos"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/builder"
 	enumactions "github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/enums/actions"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/models"
 	nosqlmodels "github.com/PesquisAi/pesquisai-database-lib/nosql/models"
-	enumlanguages "github.com/PesquisAi/pesquisai-database-lib/sql/enums/languages"
 	"go.mongodb.org/mongo-driver/bson"
-	"golang.org/x/sync/errgroup"
 	"log/slog"
-	"slices"
 	"strings"
 )
 
 const (
 	sentenceQuestionTemplate = `You are a part of a major project. In this project I will perform a google search, and your only` +
 		` responsibility is to answer me, given the context of the pearson/company that are asking, the desired research` +
-		` and the countries that will be used filter the results, what are the best languages that I should use to filter the Google search results. You should answer with a list of 2 digit ` +
-		`language codes. Respond only with a comma separated list of language codes, nothing else. ` +
-		`Here I have a list of the codes you can use: %s. context:"%s". research:"%s". countries:"%s".`
+		`, the countries and languages that will be used filter the google search results, what are the %d best sentences that I should use to perform my Google search. ` +
+		`Respond only with a sentences list, nothing else. This list NEEDS to be a \n separated list Ex: sentence1 \n sentence2 \n sentence3....` +
+		`Do not enumerate the list. Build the sentences using the languages below. ` +
+		`person/company context:"%s". research:"%s". countries:"%s". languages:"%s"`
+	sentenceAmount = 5
 )
 
 type sentenceService struct {
 	queueGemini            interfaces.Queue
 	queueGoogleSearch      interfaces.Queue
-	requestRepository      interfaces.RequestRepository
 	orchestratorRepository interfaces.OrchestratorRepository
 }
 
-func (l sentenceService) validateGeminiResponse(response []string) ([]string, error) {
-	var errorMessages, res []string
-	for i, split := range response {
-		if strings.Contains(split, "-") {
-			split = strings.Split(split, "-")[0]
-			response[i] = split
-		}
-
-		if !slices.Contains(enumlanguages.Languages, split) {
-			errorMessages = append(errorMessages, fmt.Sprintf("%s is not a valid language", split))
-			continue
-		}
-		res = append(res, split)
+func (l sentenceService) validateGeminiResponse(response string) ([]string, error) {
+	split := strings.Split(strings.ToLower(response), "\n")
+	if len(split) == 0 {
+		return nil, errortypes.NewInvalidAIResponseException(fmt.Sprintf("sentences with wrong format '%s'", response))
 	}
-
-	if len(errorMessages) > 0 {
-		return nil, errortypes.NewInvalidAIResponseException(errorMessages...)
-	}
-
-	return res, nil
+	return split, nil
 }
 func (l sentenceService) validateOrchestratorData(request nosqlmodels.Request) error {
 	var messages []string
 	if request.Context == nil {
-		messages = append(messages, `"context" is required in mongoDB to perform language service`)
+		messages = append(messages, `"context" is required in mongoDB to perform sentence service`)
 	}
 	if request.Research == nil {
-		messages = append(messages, `"research" is required in mongoDB to perform language service`)
+		messages = append(messages, `"research" is required in mongoDB to perform sentence service`)
 	}
 	if request.Locations == nil {
-		messages = append(messages, `"locations" is required in mongoDB to perform language service`)
+		messages = append(messages, `"locations" is required in mongoDB to perform sentence service`)
+	}
+	if request.Languages == nil {
+		messages = append(messages, `"languages" is required in mongoDB to perform sentence service`)
 	}
 	if len(messages) > 0 {
 		return errortypes.NewValidationException(messages...)
@@ -73,13 +59,13 @@ func (l sentenceService) validateOrchestratorData(request nosqlmodels.Request) e
 }
 
 func (l sentenceService) Execute(ctx context.Context, request models.AiOrchestratorRequest) error {
-	slog.InfoContext(ctx, "languageService.Execute",
+	slog.InfoContext(ctx, "sentenceService.Execute",
 		slog.String("details", "process started"))
 
 	var orchestratorData nosqlmodels.Request
 	err := l.orchestratorRepository.GetById(ctx, *request.RequestId, &orchestratorData)
 	if err != nil {
-		slog.ErrorContext(ctx, "languageService.Execute",
+		slog.ErrorContext(ctx, "sentenceService.Execute",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
@@ -87,28 +73,29 @@ func (l sentenceService) Execute(ctx context.Context, request models.AiOrchestra
 
 	err = l.validateOrchestratorData(orchestratorData)
 	if err != nil {
-		slog.ErrorContext(ctx, "languageService.Execute",
+		slog.ErrorContext(ctx, "sentenceService.Execute",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
 
 	question := fmt.Sprintf(
-		questionTemplate,
-		strings.Join(enumlanguages.Languages, ","),
+		sentenceQuestionTemplate,
+		sentenceAmount,
 		*orchestratorData.Context,
 		*orchestratorData.Research,
 		strings.Join(*orchestratorData.Locations, ","),
+		strings.Join(*orchestratorData.Languages, ","),
 	)
 
 	b, err := builder.BuildQueueGeminiMessage(
 		*request.RequestId,
 		question,
 		properties.QueueNameAiOrchestratorCallback,
-		enumactions.LANGUAGE,
+		enumactions.SENTENCES,
 	)
 	if err != nil {
-		slog.ErrorContext(ctx, "languageService.Execute",
+		slog.ErrorContext(ctx, "sentenceService.Execute",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
@@ -116,7 +103,7 @@ func (l sentenceService) Execute(ctx context.Context, request models.AiOrchestra
 
 	err = l.queueGemini.Publish(ctx, b)
 	if err != nil {
-		slog.ErrorContext(ctx, "languageService.Execute",
+		slog.ErrorContext(ctx, "sentenceService.Execute",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
@@ -126,57 +113,30 @@ func (l sentenceService) Execute(ctx context.Context, request models.AiOrchestra
 }
 
 func (l sentenceService) Callback(ctx context.Context, callback models.AiOrchestratorCallbackRequest) error {
-	slog.InfoContext(ctx, "languageService.Callback",
+	slog.InfoContext(ctx, "sentenceService.Callback",
 		slog.String("details", "process started"))
 
-	languages := strings.Split(strings.ToLower(*callback.Response), ",")
-	languages, err := l.validateGeminiResponse(languages)
+	sentences, err := l.validateGeminiResponse(*callback.Response)
 	if err != nil {
-		slog.ErrorContext(ctx, "languageService.Callback",
+		slog.ErrorContext(ctx, "sentenceService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
-
-	g, groupCtx := errgroup.WithContext(ctx)
-	for _, language := range languages {
-		g.Go(func() error {
-			e := l.requestRepository.RelateLanguage(groupCtx, *callback.RequestId, language)
-			if e != nil && strings.Contains(e.Error(), `unique constraint "request_languages_pkey"`) {
-				return nil
-			}
-			return e
-		})
-	}
-
-	err = g.Wait()
-	if err != nil {
-		slog.ErrorContext(ctx, "languageService.Callback",
-			slog.String("details", "process error"),
-			slog.String("error", err.Error()))
-		return err
-	}
-
 	err = l.orchestratorRepository.Update(ctx, *callback.RequestId,
-		bson.M{"languages": languages},
+		bson.M{"sentences": sentences},
 	)
 	if err != nil {
-		slog.ErrorContext(ctx, "languageService.Callback",
+		slog.ErrorContext(ctx, "sentenceService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
 
-	var (
-		b      []byte
-		action = enumactions.SENTENCES
-	)
-	b, err = builder.BuildQueueOrchestratorMessage(dtos.AiOrchestratorRequest{
-		RequestId: callback.RequestId,
-		Action:    &action,
-	})
+	var b []byte
+	b, err = builder.BuildQueueGoogleSearchMessage(*callback.RequestId)
 	if err != nil {
-		slog.ErrorContext(ctx, "languageService.Callback",
+		slog.ErrorContext(ctx, "sentenceService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
@@ -184,21 +144,20 @@ func (l sentenceService) Callback(ctx context.Context, callback models.AiOrchest
 
 	err = l.queueGoogleSearch.Publish(ctx, b)
 	if err != nil {
-		slog.ErrorContext(ctx, "languageService.Callback",
+		slog.ErrorContext(ctx, "sentenceService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
 
-	slog.InfoContext(ctx, "languageService.Callback",
+	slog.InfoContext(ctx, "sentenceService.Callback",
 		slog.String("details", "process finished"))
 	return nil
 }
-func NewSentenceService(queueGemini, queueOrchestrator interfaces.Queue, orchestratorRepository interfaces.OrchestratorRepository, requestRepository interfaces.RequestRepository) interfaces.Service {
-	return &languageService{
+func NewSentenceService(queueGemini, queueGoogleSearch interfaces.Queue, orchestratorRepository interfaces.OrchestratorRepository) interfaces.Service {
+	return &sentenceService{
 		queueGemini:            queueGemini,
-		requestRepository:      requestRepository,
 		orchestratorRepository: orchestratorRepository,
-		queueOrchestrator:      queueOrchestrator,
+		queueGoogleSearch:      queueGoogleSearch,
 	}
 }

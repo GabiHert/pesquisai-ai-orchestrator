@@ -5,6 +5,7 @@ import "os"
 const (
 	DatabaseTablePrefix             = "pesquisai."
 	QueueNameGemini                 = "gemini"
+	QueueNameGoogleSearch           = "google-search"
 	QueueNameAiOrchestrator         = "ai-orchestrator"
 	QueueNameAiOrchestratorCallback = "ai-orchestrator-callback"
 	QueueNameStatusManager          = "status-manager"

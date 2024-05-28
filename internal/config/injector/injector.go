@@ -26,6 +26,7 @@ type Dependencies struct {
 	QueueConnection                     *rabbitmq.Connection
 	UseCase                             interfaces.UseCase
 	QueueGemini                         interfaces.Queue
+	QueueGoogleSearch                   interfaces.Queue
 	QueueStatusManager                  interfaces.Queue
 	ConsumerAiOrchestratorQueue         interfaces.QueueConsumer
 	QueueAiOrchestrator                 interfaces.Queue
@@ -66,6 +67,14 @@ func (d *Dependencies) Inject() *Dependencies {
 			false, false)
 	}
 
+	if d.QueueGoogleSearch == nil {
+		d.QueueGoogleSearch = rabbitmq.NewQueue(d.QueueConnection,
+			properties.QueueNameGoogleSearch,
+			rabbitmq.ContentTypeJson,
+			properties.CreateQueueIfNX(),
+			false, false)
+	}
+
 	if d.QueueStatusManager == nil {
 		d.QueueStatusManager = rabbitmq.NewQueue(d.QueueConnection,
 			properties.QueueNameStatusManager,
@@ -96,7 +105,7 @@ func (d *Dependencies) Inject() *Dependencies {
 		d.ServiceFactory = &factory.ServiceFactory{
 			LocationService:         services.NewLocationService(d.QueueGemini, d.QueueAiOrchestrator, d.OrchestratorRepository, d.RequestRepository),
 			LanguageService:         services.NewLanguageService(d.QueueGemini, d.QueueAiOrchestrator, d.OrchestratorRepository, d.RequestRepository),
-			SentencesService:        nil,
+			SentencesService:        services.NewSentenceService(d.QueueGemini, d.QueueGoogleSearch, d.OrchestratorRepository),
 			WorthCheckingService:    nil,
 			WorthSummarizingService: nil,
 			SummarizeService:        nil,
