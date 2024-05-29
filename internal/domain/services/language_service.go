@@ -35,7 +35,7 @@ type languageService struct {
 	orchestratorRepository interfaces.OrchestratorRepository
 }
 
-func (l languageService) validateGeminiResponse(response []string) ([]string, error) {
+func (l languageService) validateGeminiResponse(response []string) ([]string, []string) {
 	var errorMessages, res []string
 	for i, split := range response {
 		if strings.Contains(split, "-") {
@@ -51,7 +51,7 @@ func (l languageService) validateGeminiResponse(response []string) ([]string, er
 	}
 
 	if len(errorMessages) > 0 {
-		return nil, errortypes.NewInvalidAIResponseException(errorMessages...)
+		return nil, errorMessages
 	}
 
 	return res, nil
@@ -73,12 +73,12 @@ func (l languageService) validateOrchestratorData(request nosqlmodels.Request) e
 	return nil
 }
 
-func (l languageService) Execute(ctx context.Context, request models.AiOrchestratorRequest) error {
+func (l languageService) Execute(ctx context.Context, orchestratorRequest models.AiOrchestratorRequest) error {
 	slog.InfoContext(ctx, "languageService.Execute",
 		slog.String("details", "process started"))
 
-	var orchestratorData nosqlmodels.Request
-	err := l.orchestratorRepository.GetById(ctx, *request.RequestId, &orchestratorData)
+	var request nosqlmodels.Request
+	err := l.orchestratorRepository.GetById(ctx, *orchestratorRequest.RequestId, &request)
 	if err != nil {
 		slog.ErrorContext(ctx, "languageService.Execute",
 			slog.String("details", "process error"),
@@ -86,7 +86,7 @@ func (l languageService) Execute(ctx context.Context, request models.AiOrchestra
 		return err
 	}
 
-	err = l.validateOrchestratorData(orchestratorData)
+	err = l.validateOrchestratorData(request)
 	if err != nil {
 		slog.ErrorContext(ctx, "languageService.Execute",
 			slog.String("details", "process error"),
@@ -94,19 +94,14 @@ func (l languageService) Execute(ctx context.Context, request models.AiOrchestra
 		return err
 	}
 
-	question := fmt.Sprintf(
-		questionTemplate,
-		strings.Join(enumlanguages.Languages, ","),
-		*orchestratorData.Context,
-		*orchestratorData.Research,
-		strings.Join(*orchestratorData.Locations, ","),
-	)
+	question := l.buildQuestion(request)
 
 	b, err := builder.BuildQueueGeminiMessage(
-		*request.RequestId,
+		*orchestratorRequest.RequestId,
 		question,
 		properties.QueueNameAiOrchestratorCallback,
 		enumactions.LANGUAGE,
+		0,
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "languageService.Execute",
@@ -126,13 +121,33 @@ func (l languageService) Execute(ctx context.Context, request models.AiOrchestra
 	return nil
 }
 
+func (l languageService) buildQuestion(request nosqlmodels.Request) string {
+	return fmt.Sprintf(
+		questionTemplate,
+		strings.Join(enumlanguages.Languages, ","),
+		*request.Context,
+		*request.Research,
+		strings.Join(*request.Locations, ","),
+	)
+}
+
 func (l languageService) Callback(ctx context.Context, callback models.AiOrchestratorCallbackRequest) error {
 	slog.InfoContext(ctx, "languageService.Callback",
 		slog.String("details", "process started"))
 
 	languages := strings.Split(strings.ToLower(*callback.Response), ",")
-	languages, err := l.validateGeminiResponse(languages)
-	if err != nil {
+	languages, errMessages := l.validateGeminiResponse(languages)
+	if errMessages != nil {
+		var request nosqlmodels.Request
+		err := l.orchestratorRepository.GetById(ctx, *callback.RequestId, &request)
+		if err != nil {
+			slog.ErrorContext(ctx, "languageService.Execute",
+				slog.String("details", "process error"),
+				slog.String("error", err.Error()))
+			return err
+		}
+		question := l.buildQuestion(request)
+		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.LANGUAGE, callback.ReceiveCount, errMessages...)
 		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
@@ -150,7 +165,7 @@ func (l languageService) Callback(ctx context.Context, callback models.AiOrchest
 		})
 	}
 
-	err = g.Wait()
+	err := g.Wait()
 	if err != nil {
 		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),

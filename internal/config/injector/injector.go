@@ -117,7 +117,7 @@ func (d *Dependencies) Inject() *Dependencies {
 	}
 
 	if d.Controller == nil {
-		d.Controller = controllers.NewController(d.UseCase)
+		d.Controller = controllers.NewController(d.QueueGemini, d.UseCase)
 	}
 	return d
 }

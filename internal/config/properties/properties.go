@@ -1,6 +1,9 @@
 package properties
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 const (
 	DatabaseTablePrefix             = "pesquisai."
@@ -57,6 +60,12 @@ func DatabaseSqlConnectionPassword() string {
 func DatabaseNoSqlConnectionHost() string {
 	return os.Getenv("DATABASE_NO_SQL_CONNECTION_HOST")
 }
+
+func GetMaxAiReceiveCount() int {
+	i, _ := strconv.Atoi(os.Getenv("MAX_AI_RECEIVE_COUNT"))
+	return i
+}
+
 func DatabaseNoSqlConnectionPort() string {
 	return os.Getenv("DATABASE_NO_SQL_CONNECTION_PORT")
 }

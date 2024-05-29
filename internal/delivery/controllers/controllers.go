@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/errortypes"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/config/properties"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/delivery/dtos"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/delivery/parser"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/delivery/validations"
+	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/builder"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/interfaces"
 	"github.com/PesquisAi/pesquisai-ai-orchestrator/internal/domain/models"
 	"github.com/PesquisAi/pesquisai-errors-lib/exceptions"
@@ -15,10 +17,11 @@ import (
 )
 
 type controller struct {
-	useCase interfaces.UseCase
+	useCase     interfaces.UseCase
+	queueGemini interfaces.Queue
 }
 
-func (c controller) errorHandler(err error) error {
+func (c controller) errorHandler(ctx context.Context, err error) error {
 	exception := &exceptions.Error{}
 	if !errors.As(err, exception) {
 		exception = errortypes.NewUnknownException(err.Error())
@@ -28,6 +31,32 @@ func (c controller) errorHandler(err error) error {
 	slog.Error("controller.errorHandler",
 		slog.String("details", "process error"),
 		slog.String("errorType", string(b)))
+
+	if exception.Code == errortypes.InvalidAiResponseCode {
+		receiveCount, _ := exception.Forward["receiveCount"].(int)
+		if receiveCount >= properties.GetMaxAiReceiveCount() {
+			return nil
+		}
+
+		requestId, _ := exception.Forward["requestId"].(string)
+		question, _ := exception.Forward["question"].(string)
+		action, _ := exception.Forward["action"].(string)
+
+		b, err = builder.BuildQueueGeminiMessage(requestId, question, properties.QueueNameAiOrchestratorCallback, action, receiveCount)
+		if err != nil {
+			slog.Error("controller.errorHandler",
+				slog.String("details", "process error"),
+				slog.Any("err", err.Error()))
+		} else {
+			err = c.queueGemini.Publish(ctx, b)
+			if err == nil {
+				return nil
+			}
+			slog.Warn("controller.errorHandler",
+				slog.String("details", "process error"),
+				slog.Any("err", err.Error()))
+		}
+	}
 
 	if exception.Abort {
 		return nil
@@ -42,12 +71,13 @@ func (c controller) def() {
 			slog.Any("recover", r))
 
 		err := errortypes.NewUnknownException("application panic")
-		_ = c.errorHandler(err)
+		_ = c.errorHandler(context.TODO(), err)
 	}
 }
 
 func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) error {
 	defer c.def()
+	ctx := context.Background()
 	slog.Info("controller.AiOrchestratorHandler",
 		slog.String("details", "process started"),
 		slog.String("messageId", delivery.MessageId),
@@ -56,12 +86,12 @@ func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) error {
 	var request dtos.AiOrchestratorRequest
 	err := parser.ParseDeliveryJSON(&request, delivery)
 	if err != nil {
-		return c.errorHandler(err)
+		return c.errorHandler(ctx, err)
 	}
 
 	err = validations.ValidateRequest(&request)
 	if err != nil {
-		return c.errorHandler(err)
+		return c.errorHandler(ctx, err)
 	}
 
 	requestModel := models.AiOrchestratorRequest{
@@ -71,9 +101,9 @@ func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) error {
 		Action:    request.Action,
 	}
 
-	err = c.useCase.Orchestrate(context.Background(), requestModel)
+	err = c.useCase.Orchestrate(ctx, requestModel)
 	if err != nil {
-		return c.errorHandler(err)
+		return c.errorHandler(ctx, err)
 	}
 
 	slog.Info("controller.AiOrchestratorHandler",
@@ -83,6 +113,8 @@ func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) error {
 
 func (c controller) AiOrchestratorCallbackHandler(delivery amqp.Delivery) error {
 	defer c.def()
+	ctx := context.Background()
+
 	slog.Info("controller.AiOrchestratorCallbackHandler",
 		slog.String("details", "process started"),
 		slog.String("messageId", delivery.MessageId),
@@ -91,24 +123,25 @@ func (c controller) AiOrchestratorCallbackHandler(delivery amqp.Delivery) error 
 	var callback dtos.AiOrchestratorCallbackRequest
 	err := parser.ParseDeliveryJSON(&callback, delivery)
 	if err != nil {
-		return c.errorHandler(err)
+		return c.errorHandler(ctx, err)
 	}
 
 	err = validations.ValidateCallbackRequest(&callback)
 	if err != nil {
-		return c.errorHandler(err)
+		return c.errorHandler(ctx, err)
 	}
 
 	requestModel := models.AiOrchestratorCallbackRequest{
-		RequestId:  callback.RequestId,
-		ResearchId: callback.ResearchId,
-		Response:   callback.Response,
-		Action:     callback.Forward.Action,
+		RequestId:    callback.RequestId,
+		ResearchId:   callback.ResearchId,
+		Response:     callback.Response,
+		Action:       callback.Forward.Action,
+		ReceiveCount: *callback.Forward.ReceiveCount,
 	}
 
-	err = c.useCase.OrchestrateCallback(context.Background(), requestModel)
+	err = c.useCase.OrchestrateCallback(ctx, requestModel)
 	if err != nil {
-		return c.errorHandler(err)
+		return c.errorHandler(ctx, err)
 	}
 
 	slog.Info("controller.AiOrchestratorCallbackHandler",
@@ -117,6 +150,9 @@ func (c controller) AiOrchestratorCallbackHandler(delivery amqp.Delivery) error 
 	return nil
 }
 
-func NewController(useCase interfaces.UseCase) interfaces.Controller {
-	return &controller{useCase}
+func NewController(queueGemini interfaces.Queue, useCase interfaces.UseCase) interfaces.Controller {
+	return &controller{
+		useCase:     useCase,
+		queueGemini: queueGemini,
+	}
 }

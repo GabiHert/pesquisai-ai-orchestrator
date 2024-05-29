@@ -31,10 +31,11 @@ type sentenceService struct {
 	orchestratorRepository interfaces.OrchestratorRepository
 }
 
-func (l sentenceService) validateGeminiResponse(response string) ([]string, error) {
+func (l sentenceService) validateGeminiResponse(response string) ([]string, *string) {
 	split := strings.Split(strings.ToLower(response), "\n")
 	if len(split) == 0 {
-		return nil, errortypes.NewInvalidAIResponseException(fmt.Sprintf("sentences with wrong format '%s'", response))
+		message := fmt.Sprintf("sentences with wrong format '%s'", response)
+		return nil, &message
 	}
 	return split, nil
 }
@@ -58,12 +59,23 @@ func (l sentenceService) validateOrchestratorData(request nosqlmodels.Request) e
 	return nil
 }
 
-func (l sentenceService) Execute(ctx context.Context, request models.AiOrchestratorRequest) error {
+func (l sentenceService) buildQuestion(request nosqlmodels.Request) string {
+	return fmt.Sprintf(
+		sentenceQuestionTemplate,
+		sentenceAmount,
+		*request.Context,
+		*request.Research,
+		strings.Join(*request.Locations, ","),
+		strings.Join(*request.Languages, ","),
+	)
+}
+
+func (l sentenceService) Execute(ctx context.Context, orchestratorRequest models.AiOrchestratorRequest) error {
 	slog.InfoContext(ctx, "sentenceService.Execute",
 		slog.String("details", "process started"))
 
-	var orchestratorData nosqlmodels.Request
-	err := l.orchestratorRepository.GetById(ctx, *request.RequestId, &orchestratorData)
+	var request nosqlmodels.Request
+	err := l.orchestratorRepository.GetById(ctx, *orchestratorRequest.RequestId, &request)
 	if err != nil {
 		slog.ErrorContext(ctx, "sentenceService.Execute",
 			slog.String("details", "process error"),
@@ -71,7 +83,7 @@ func (l sentenceService) Execute(ctx context.Context, request models.AiOrchestra
 		return err
 	}
 
-	err = l.validateOrchestratorData(orchestratorData)
+	err = l.validateOrchestratorData(request)
 	if err != nil {
 		slog.ErrorContext(ctx, "sentenceService.Execute",
 			slog.String("details", "process error"),
@@ -79,20 +91,14 @@ func (l sentenceService) Execute(ctx context.Context, request models.AiOrchestra
 		return err
 	}
 
-	question := fmt.Sprintf(
-		sentenceQuestionTemplate,
-		sentenceAmount,
-		*orchestratorData.Context,
-		*orchestratorData.Research,
-		strings.Join(*orchestratorData.Locations, ","),
-		strings.Join(*orchestratorData.Languages, ","),
-	)
+	question := l.buildQuestion(request)
 
 	b, err := builder.BuildQueueGeminiMessage(
-		*request.RequestId,
+		*orchestratorRequest.RequestId,
 		question,
 		properties.QueueNameAiOrchestratorCallback,
 		enumactions.SENTENCES,
+		0,
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "sentenceService.Execute",
@@ -116,14 +122,25 @@ func (l sentenceService) Callback(ctx context.Context, callback models.AiOrchest
 	slog.InfoContext(ctx, "sentenceService.Callback",
 		slog.String("details", "process started"))
 
-	sentences, err := l.validateGeminiResponse(*callback.Response)
-	if err != nil {
+	sentences, errMessage := l.validateGeminiResponse(*callback.Response)
+	if errMessage != nil {
+		var request nosqlmodels.Request
+		err := l.orchestratorRepository.GetById(ctx, *callback.RequestId, &request)
+		if err != nil {
+			slog.ErrorContext(ctx, "sentenceService.Callback",
+				slog.String("details", "process error"),
+				slog.String("error", err.Error()))
+			return err
+		}
+		question := l.buildQuestion(request)
+		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.SENTENCES, callback.ReceiveCount, *errMessage)
 		slog.ErrorContext(ctx, "sentenceService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
 		return err
 	}
-	err = l.orchestratorRepository.Update(ctx, *callback.RequestId,
+
+	err := l.orchestratorRepository.Update(ctx, *callback.RequestId,
 		bson.M{"sentences": sentences},
 	)
 	if err != nil {

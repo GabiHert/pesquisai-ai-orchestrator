@@ -35,10 +35,11 @@ type locationService struct {
 	orchestratorRepository interfaces.OrchestratorRepository
 }
 
-func (l locationService) validateGeminiResponse(response []string) error {
+func (l locationService) validateGeminiResponse(response []string) *string {
 	for _, split := range response {
 		if !slices.Contains(enumlocations.Locations, split) {
-			return errortypes.NewInvalidAIResponseException(fmt.Sprintf("%s is not a valid location", split))
+			message := fmt.Sprintf("%s is not a valid location", split)
+			return &message
 		}
 	}
 	return nil
@@ -56,6 +57,14 @@ func (l locationService) validateRequest(request models.AiOrchestratorRequest) e
 		return errortypes.NewValidationException(messages...)
 	}
 	return nil
+}
+
+func (l locationService) buildQuestion(context, research string) string {
+	return fmt.Sprintf(
+		locationQuestionTemplate,
+		strings.Join(enumlocations.Locations, ","),
+		context,
+		research)
 }
 
 func (l locationService) Execute(ctx context.Context, request models.AiOrchestratorRequest) error {
@@ -85,17 +94,14 @@ func (l locationService) Execute(ctx context.Context, request models.AiOrchestra
 		return err
 	}
 
-	question := fmt.Sprintf(
-		locationQuestionTemplate,
-		strings.Join(enumlocations.Locations, ","),
-		*request.Context,
-		*request.Research)
+	question := l.buildQuestion(*request.Context, *request.Research)
 
 	b, err := builder.BuildQueueGeminiMessage(
 		*request.RequestId,
 		question,
 		properties.QueueNameAiOrchestratorCallback,
 		enumactions.LOCATION,
+		0,
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "locationService.Execute",
@@ -120,8 +126,18 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 		slog.String("details", "process started"))
 
 	locations := strings.Split(strings.ToLower(*callback.Response), ",")
-	err := l.validateGeminiResponse(locations)
-	if err != nil {
+	errMessage := l.validateGeminiResponse(locations)
+	if errMessage != nil {
+		var request nosqlmodels.Request
+		err := l.orchestratorRepository.GetById(ctx, *callback.RequestId, &request)
+		if err != nil {
+			slog.ErrorContext(ctx, "locationService.Callback",
+				slog.String("details", "process error"),
+				slog.String("error", err.Error()))
+			return err
+		}
+		question := l.buildQuestion(*request.Context, *request.Research)
+		err = errortypes.NewInvalidAIResponseException(*request.ID, question, enumactions.LOCATION, callback.ReceiveCount, *errMessage)
 		slog.ErrorContext(ctx, "locationService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
@@ -139,7 +155,7 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 		})
 	}
 
-	err = g.Wait()
+	err := g.Wait()
 	if err != nil {
 		slog.ErrorContext(ctx, "locationService.Callback",
 			slog.String("details", "process error"),

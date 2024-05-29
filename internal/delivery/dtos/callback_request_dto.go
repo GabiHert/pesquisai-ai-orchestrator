@@ -5,6 +5,7 @@ type AiOrchestratorCallbackRequest struct {
 	ResearchId *string `json:"research_id,omitempty" validate:"omitempty,uuid"`
 	Response   *string `json:"response,omitempty" validate:"required"`
 	Forward    *struct {
-		Action *string `json:"action" validate:"required,oneof= location language sentences worth-checking worth-summarizing summarize"`
+		Action       *string `json:"action" validate:"required,oneof= location language sentences worth-checking worth-summarizing summarize"`
+		ReceiveCount *int    `json:"receive_count" validate:"required"`
 	} `json:"forward" validate:"required"`
 }
