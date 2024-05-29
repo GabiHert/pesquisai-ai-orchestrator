@@ -17,11 +17,11 @@ import (
 
 const (
 	sentenceQuestionTemplate = `You are a part of a major project. In this project I will perform a google search, and your only` +
-		` responsibility is to answer me, given the context of the pearson/company that are asking, the desired research` +
-		`, the countries and languages that will be used filter the google search results, what are the %d best sentences that I should use to perform my Google search. ` +
-		`Respond only with a sentences list, nothing else. This list NEEDS to be a \n separated list Ex: sentence1 \n sentence2 \n sentence3....` +
-		`Do not enumerate the list. Build the sentences using the languages below. ` +
-		`person/company context:"%s". research:"%s". countries:"%s". languages:"%s"`
+		` responsibility is to answer me, given the context of the pearson/company that are asking and the research they want to do` +
+		`, what are the %d best sentences that should be used to perform the Google search? ` +
+		`Respond only the a sentences list, NOTHING else! This list NEEDS to be a \n separated list Ex: sentence1 \n sentence2 \n sentence3... !` +
+		`Do not enumerate the list. When possible, use a different language to each sentence. ` +
+		`person/company context:"%s". research:"%s". languages:"%s"`
 	sentenceAmount = 5
 )
 
@@ -65,7 +65,6 @@ func (l sentenceService) buildQuestion(request nosqlmodels.Request) string {
 		sentenceAmount,
 		*request.Context,
 		*request.Research,
-		strings.Join(*request.Locations, ","),
 		strings.Join(*request.Languages, ","),
 	)
 }
