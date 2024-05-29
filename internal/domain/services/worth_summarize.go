@@ -231,7 +231,7 @@ func (l worthSummarizeService) Callback(ctx context.Context, callback models.AiO
 			return err
 		}
 
-		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.WorthSummarize, callback.ReceiveCount, *errMessage)
+		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.WorthSummarize, callback.ReceiveCount+1, *errMessage)
 		slog.ErrorContext(ctx, "worthSummarizeService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))

@@ -132,7 +132,7 @@ func (l sentenceService) Callback(ctx context.Context, callback models.AiOrchest
 			return err
 		}
 		question := l.buildQuestion(request)
-		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.Sentences, callback.ReceiveCount, *errMessage)
+		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.Sentences, callback.ReceiveCount+1, *errMessage)
 		slog.ErrorContext(ctx, "sentenceService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))

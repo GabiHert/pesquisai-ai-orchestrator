@@ -120,7 +120,7 @@ func (d *Dependencies) Inject() *Dependencies {
 			SentencesService:      services.NewSentenceService(d.QueueGemini, d.QueueGoogleSearch, d.OrchestratorRepository),
 			WorthAccessingService: services.NewWorthAccessingService(d.QueueGemini, d.QueueWebScraper, d.QueueStatusManager, d.OrchestratorRepository),
 			WorthSummarizeService: services.NewWorthSummarizeService(d.QueueGemini, d.QueueAiOrchestrator, d.QueueStatusManager, d.OrchestratorRepository),
-			SummarizeService:      nil,
+			SummarizeService:      services.NewSummarizeService(d.QueueGemini, d.QueueStatusManager, d.OrchestratorRepository),
 		}
 	}
 

@@ -48,9 +48,6 @@ func (l worthAccessingService) validateOrchestratorData(request nosqlmodels.Requ
 	if request.Research == nil {
 		messages = append(messages, `"research" is required in mongoDB to perform sentence service`)
 	}
-	if request.Research == nil {
-		messages = append(messages, `"research" is required in mongoDB to perform sentence service`)
-	}
 	if len(messages) > 0 {
 		return errortypes.NewValidationException(messages...)
 	}
@@ -231,7 +228,7 @@ func (l worthAccessingService) Callback(ctx context.Context, callback models.AiO
 			return err
 		}
 
-		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.WorthAccessing, callback.ReceiveCount, *errMessage)
+		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.WorthAccessing, callback.ReceiveCount+1, *errMessage)
 		slog.ErrorContext(ctx, "worthAccessingService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))

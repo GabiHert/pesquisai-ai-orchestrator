@@ -137,7 +137,7 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 			return err
 		}
 		question := l.buildQuestion(*request.Context, *request.Research)
-		err = errortypes.NewInvalidAIResponseException(*request.ID, question, enumactions.Location, callback.ReceiveCount, *errMessage)
+		err = errortypes.NewInvalidAIResponseException(*request.ID, question, enumactions.Location, callback.ReceiveCount+1, *errMessage)
 		slog.ErrorContext(ctx, "locationService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))

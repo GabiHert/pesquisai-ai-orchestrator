@@ -147,7 +147,7 @@ func (l languageService) Callback(ctx context.Context, callback models.AiOrchest
 			return err
 		}
 		question := l.buildQuestion(request)
-		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.Language, callback.ReceiveCount, errMessages...)
+		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.Language, callback.ReceiveCount+1, errMessages...)
 		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
