@@ -8,27 +8,27 @@ import (
 )
 
 type ServiceFactory struct {
-	LocationService         interfaces.Service
-	LanguageService         interfaces.Service
-	SentencesService        interfaces.Service
-	WorthCheckingService    interfaces.Service
-	WorthSummarizingService interfaces.Service
-	SummarizeService        interfaces.Service
+	LocationService       interfaces.Service
+	LanguageService       interfaces.Service
+	SentencesService      interfaces.Service
+	WorthAccessingService interfaces.Service
+	WorthSummarizeService interfaces.Service
+	SummarizeService      interfaces.Service
 }
 
 func (sf ServiceFactory) Factory(action string) (interfaces.Service, error) {
 	switch action {
-	case enumactions.LOCATION:
+	case enumactions.Location:
 		return sf.LocationService, nil
-	case enumactions.LANGUAGE:
+	case enumactions.Language:
 		return sf.LanguageService, nil
-	case enumactions.SENTENCES:
+	case enumactions.Sentences:
 		return sf.SentencesService, nil
-	case enumactions.WORTH_CHECKING:
-		return sf.WorthCheckingService, nil
-	case enumactions.WORTH_SUMMARIZING:
-		return sf.WorthSummarizingService, nil
-	case enumactions.SUMMARIZE:
+	case enumactions.WorthAccessing:
+		return sf.WorthAccessingService, nil
+	case enumactions.WorthSummarize:
+		return sf.WorthSummarizeService, nil
+	case enumactions.Summarize:
 		return sf.SummarizeService, nil
 	}
 	return nil, errortypes.NewServiceNotFoundException(fmt.Sprintf("Service for action '%s' not found", action))

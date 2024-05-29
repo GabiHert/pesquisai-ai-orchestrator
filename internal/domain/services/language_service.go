@@ -100,7 +100,7 @@ func (l languageService) Execute(ctx context.Context, orchestratorRequest models
 		*orchestratorRequest.RequestId,
 		question,
 		properties.QueueNameAiOrchestratorCallback,
-		enumactions.LANGUAGE,
+		enumactions.Language,
 		0,
 	)
 	if err != nil {
@@ -147,7 +147,7 @@ func (l languageService) Callback(ctx context.Context, callback models.AiOrchest
 			return err
 		}
 		question := l.buildQuestion(request)
-		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.LANGUAGE, callback.ReceiveCount, errMessages...)
+		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.Language, callback.ReceiveCount, errMessages...)
 		slog.ErrorContext(ctx, "languageService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
@@ -185,7 +185,7 @@ func (l languageService) Callback(ctx context.Context, callback models.AiOrchest
 
 	var (
 		b      []byte
-		action = enumactions.SENTENCES
+		action = enumactions.Sentences
 	)
 	b, err = builder.BuildQueueOrchestratorMessage(dtos.AiOrchestratorRequest{
 		RequestId: callback.RequestId,

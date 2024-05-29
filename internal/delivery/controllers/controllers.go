@@ -95,10 +95,11 @@ func (c controller) AiOrchestratorHandler(delivery amqp.Delivery) error {
 	}
 
 	requestModel := models.AiOrchestratorRequest{
-		RequestId: request.RequestId,
-		Context:   request.Context,
-		Research:  request.Research,
-		Action:    request.Action,
+		RequestId:  request.RequestId,
+		ResearchId: request.ResearchId,
+		Context:    request.Context,
+		Research:   request.Research,
+		Action:     request.Action,
 	}
 
 	err = c.useCase.Orchestrate(ctx, requestModel)

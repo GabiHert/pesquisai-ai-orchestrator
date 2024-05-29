@@ -12,6 +12,7 @@ const (
 	QueueNameAiOrchestrator         = "ai-orchestrator"
 	QueueNameAiOrchestratorCallback = "ai-orchestrator-callback"
 	QueueNameStatusManager          = "status-manager"
+	QueueNameWebScraper             = "web-scraper"
 
 	DatabaseNoSqlName                  = "pesquisai"
 	DatabaseOrchestratorCollectionName = "orchestrator"

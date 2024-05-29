@@ -59,6 +59,16 @@ func Connect(deps *injector.Dependencies) error {
 		return err
 	}
 
+	err = deps.QueueStatusManager.Connect()
+	if err != nil {
+		return err
+	}
+
+	err = deps.QueueWebScraper.Connect()
+	if err != nil {
+		return err
+	}
+
 	err = deps.QueueGoogleSearch.Connect()
 	if err != nil {
 		return err

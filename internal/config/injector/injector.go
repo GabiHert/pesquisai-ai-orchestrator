@@ -21,6 +21,7 @@ type Dependencies struct {
 	Controller                          interfaces.Controller
 	RequestRepository                   interfaces.RequestRepository
 	OrchestratorRepository              interfaces.OrchestratorRepository
+	ResearchRepository                  interfaces.ResearchRepository
 	DatabaseSqlConnection               *sql.Connection
 	DatabaseNoSqlConnection             *nosql.Connection
 	QueueConnection                     *rabbitmq.Connection
@@ -28,6 +29,7 @@ type Dependencies struct {
 	QueueGemini                         interfaces.Queue
 	QueueGoogleSearch                   interfaces.Queue
 	QueueStatusManager                  interfaces.Queue
+	QueueWebScraper                     interfaces.Queue
 	ConsumerAiOrchestratorQueue         interfaces.QueueConsumer
 	QueueAiOrchestrator                 interfaces.Queue
 	ConsumerAiOrchestratorCallbackQueue interfaces.QueueConsumer
@@ -53,6 +55,10 @@ func (d *Dependencies) Inject() *Dependencies {
 
 	if d.RequestRepository == nil {
 		d.RequestRepository = &sqlrepositories.Request{Connection: d.DatabaseSqlConnection}
+	}
+
+	if d.ResearchRepository == nil {
+		d.ResearchRepository = &sqlrepositories.Research{Connection: d.DatabaseSqlConnection}
 	}
 
 	if d.QueueConnection == nil {
@@ -81,6 +87,12 @@ func (d *Dependencies) Inject() *Dependencies {
 			rabbitmq.ContentTypeJson,
 			properties.CreateQueueIfNX(), false, false)
 	}
+	if d.QueueWebScraper == nil {
+		d.QueueWebScraper = rabbitmq.NewQueue(d.QueueConnection,
+			properties.QueueNameWebScraper,
+			rabbitmq.ContentTypeJson,
+			properties.CreateQueueIfNX(), false, false)
+	}
 
 	if d.ConsumerAiOrchestratorQueue == nil || d.QueueAiOrchestrator == nil {
 		queue := rabbitmq.NewQueue(
@@ -103,12 +115,12 @@ func (d *Dependencies) Inject() *Dependencies {
 
 	if d.ServiceFactory == nil {
 		d.ServiceFactory = &factory.ServiceFactory{
-			LocationService:         services.NewLocationService(d.QueueGemini, d.QueueAiOrchestrator, d.OrchestratorRepository, d.RequestRepository),
-			LanguageService:         services.NewLanguageService(d.QueueGemini, d.QueueAiOrchestrator, d.OrchestratorRepository, d.RequestRepository),
-			SentencesService:        services.NewSentenceService(d.QueueGemini, d.QueueGoogleSearch, d.OrchestratorRepository),
-			WorthCheckingService:    nil,
-			WorthSummarizingService: nil,
-			SummarizeService:        nil,
+			LocationService:       services.NewLocationService(d.QueueGemini, d.QueueAiOrchestrator, d.OrchestratorRepository, d.RequestRepository),
+			LanguageService:       services.NewLanguageService(d.QueueGemini, d.QueueAiOrchestrator, d.OrchestratorRepository, d.RequestRepository),
+			SentencesService:      services.NewSentenceService(d.QueueGemini, d.QueueGoogleSearch, d.OrchestratorRepository),
+			WorthAccessingService: services.NewWorthAccessingService(d.QueueGemini, d.QueueWebScraper, d.QueueStatusManager, d.OrchestratorRepository),
+			WorthSummarizeService: services.NewWorthSummarizeService(d.QueueGemini, d.QueueAiOrchestrator, d.QueueStatusManager, d.OrchestratorRepository),
+			SummarizeService:      nil,
 		}
 	}
 

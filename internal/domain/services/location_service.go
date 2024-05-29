@@ -100,7 +100,7 @@ func (l locationService) Execute(ctx context.Context, request models.AiOrchestra
 		*request.RequestId,
 		question,
 		properties.QueueNameAiOrchestratorCallback,
-		enumactions.LOCATION,
+		enumactions.Location,
 		0,
 	)
 	if err != nil {
@@ -137,7 +137,7 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 			return err
 		}
 		question := l.buildQuestion(*request.Context, *request.Research)
-		err = errortypes.NewInvalidAIResponseException(*request.ID, question, enumactions.LOCATION, callback.ReceiveCount, *errMessage)
+		err = errortypes.NewInvalidAIResponseException(*request.ID, question, enumactions.Location, callback.ReceiveCount, *errMessage)
 		slog.ErrorContext(ctx, "locationService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
@@ -175,7 +175,7 @@ func (l locationService) Callback(ctx context.Context, callback models.AiOrchest
 
 	var (
 		b      []byte
-		action = enumactions.LANGUAGE
+		action = enumactions.Language
 	)
 	b, err = builder.BuildQueueOrchestratorMessage(dtos.AiOrchestratorRequest{
 		RequestId: callback.RequestId,

@@ -96,7 +96,7 @@ func (l sentenceService) Execute(ctx context.Context, orchestratorRequest models
 		*orchestratorRequest.RequestId,
 		question,
 		properties.QueueNameAiOrchestratorCallback,
-		enumactions.SENTENCES,
+		enumactions.Sentences,
 		0,
 	)
 	if err != nil {
@@ -132,7 +132,7 @@ func (l sentenceService) Callback(ctx context.Context, callback models.AiOrchest
 			return err
 		}
 		question := l.buildQuestion(request)
-		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.SENTENCES, callback.ReceiveCount, *errMessage)
+		err = errortypes.NewInvalidAIResponseException(*callback.RequestId, question, enumactions.Sentences, callback.ReceiveCount, *errMessage)
 		slog.ErrorContext(ctx, "sentenceService.Callback",
 			slog.String("details", "process error"),
 			slog.String("error", err.Error()))
