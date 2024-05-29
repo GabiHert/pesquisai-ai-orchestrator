@@ -22,8 +22,8 @@ type controller struct {
 }
 
 func (c controller) errorHandler(ctx context.Context, err error) error {
-	exception := &exceptions.Error{}
-	if !errors.As(err, exception) {
+	var exception *exceptions.Error
+	if !errors.As(err, &exception) {
 		exception = errortypes.NewUnknownException(err.Error())
 	}
 
